@@ -130,18 +130,9 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
-                        text = "Tola",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TolaPrimary
-                    )
+                    Text(text = "Tola", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TolaPrimary)
 
-                    Text(
-                        text = "Home",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = "Home", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Row(
@@ -150,9 +141,7 @@ fun HomeScreen(
                     IconButton(
                         onClick = {}
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsNone,
-                            contentDescription = "Notifications"
+                        Icon(imageVector = Icons.Default.NotificationsNone, contentDescription = "Notifications"
                         )
                     }
 
@@ -166,12 +155,7 @@ fun HomeScreen(
                             .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "AC",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
+                        Text(text = "AC", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -180,11 +164,7 @@ fun HomeScreen(
         // Greeting
         item {
             Column {
-                Text(
-                    text = "Hey Alex 👋",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Hey Flashback 👋", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -237,10 +217,7 @@ fun HomeScreen(
                         containerColor = TolaLostOrange
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
 
                     Spacer(modifier = Modifier.width(6.dp))
 
@@ -260,28 +237,18 @@ fun HomeScreen(
                         containerColor = TolaFoundTag
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    Text(
-                        text = "Report Found",
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text(text = "Report Found", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
 
         // Filter title
         item {
-            Text(
-                text = "Recent on Campus",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = "Recent on Campus", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
 
         // Filters
@@ -307,10 +274,7 @@ fun HomeScreen(
         }
 
         // Feed
-        items(
-            items = filteredItems,
-            key = { it.id }
-        ) { item ->
+        items(items = filteredItems, key = { it.id }) { item ->
             LostFoundItemCard(
                 item = item,
                 onClick = {
@@ -402,10 +366,7 @@ private fun LostFoundItemCard(
 
                 Spacer(modifier = Modifier.width(5.dp))
 
-                Text(
-                    text = item.location,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text(text = item.location, style = MaterialTheme.typography.bodySmall)
 
                 Spacer(modifier = Modifier.width(14.dp))
 
@@ -418,11 +379,7 @@ private fun LostFoundItemCard(
 
                 Spacer(modifier = Modifier.width(5.dp))
 
-                Text(
-                    text = item.timeAgo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = item.timeAgo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
