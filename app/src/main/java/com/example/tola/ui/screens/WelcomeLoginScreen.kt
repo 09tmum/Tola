@@ -47,13 +47,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.ui.theme.TolaPrimary
 
+private fun isValidEmail(email: String): Boolean {
+    return email.isNotBlank() && Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(email)
+}
+
 @Composable
 fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    // Login state
     var email by remember { mutableStateOf("flashback.prince@campus.edu") }
     var password by remember { mutableStateOf("password123") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
+
+    // Register state
+    var regEmail by remember { mutableStateOf("") }
+    var regPassword by remember { mutableStateOf("") }
+    var regPasswordVisible by remember { mutableStateOf(false) }
+
+    val isLoginEmailValid = isValidEmail(email)
+    val isRegEmailValid = isValidEmail(regEmail)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -98,37 +112,40 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = {
-                        Text("Login")
-                    }
+                    text = { Text("Login") }
                 )
 
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = {
-                        Text("Register")
-                    }
+                    text = { Text("Register") }
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             if (selectedTab == 0) {
+                // Email input
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = { input -> email = input.filter { !it.isWhitespace() } },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Email") },
                     placeholder = { Text("Enter your email") },
                     singleLine = true,
+                    isError = email.isNotEmpty() && !isLoginEmailValid,
+                    supportingText = {
+                        if (email.isNotEmpty() && !isLoginEmailValid) {
+                            Text("Please enter a valid email address (e.g. user@campus.edu)")
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Password
+                // Password input
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -141,22 +158,12 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                     } else {
                         PasswordVisualTransformation()
                     },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password
-                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) {
-                                    Icons.Default.VisibilityOff
-                                } else {
-                                    Icons.Default.Visibility
-                                },
-                                contentDescription = if (passwordVisible) {
-                                    "Hide password"
-                                } else {
-                                    "Show password"
-                                }
+                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
                             )
                         }
                     },
@@ -185,9 +192,15 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
-                //login button
+
+                // Login Button
                 Button(
-                    onClick = onLoginSuccess,
+                    onClick = {
+                        if (isLoginEmailValid) {
+                            onLoginSuccess()
+                        }
+                    },
+                    enabled = isLoginEmailValid,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
@@ -198,7 +211,6 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
 
             } else {
-
                 // Register UI
                 Text(
                     text = "Create your Tola account",
@@ -216,36 +228,60 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Register Email input
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = regEmail,
+                    onValueChange = { input -> regEmail = input.filter { !it.isWhitespace() } },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Email") },
                     placeholder = { Text("Enter your email") },
                     singleLine = true,
+                    isError = regEmail.isNotEmpty() && !isRegEmailValid,
+                    supportingText = {
+                        if (regEmail.isNotEmpty() && !isRegEmailValid) {
+                            Text("Please enter a valid email address (e.g. user@campus.edu)")
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     shape = RoundedCornerShape(12.dp)
-
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
+                // Register Password input
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = regPassword,
+                    onValueChange = { regPassword = it },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Password") },
                     placeholder = { Text("Create a password") },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (regPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        IconButton(onClick = { regPasswordVisible = !regPasswordVisible }) {
+                            Icon(
+                                imageVector = if (regPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (regPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
-                    onClick = { selectedTab = 0 },
+                    onClick = {
+                        if (isRegEmailValid) {
+                            onLoginSuccess()
+                        }
+                    },
+                    enabled = isRegEmailValid && regPassword.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)

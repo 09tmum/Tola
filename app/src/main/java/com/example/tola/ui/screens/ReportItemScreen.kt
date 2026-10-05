@@ -52,9 +52,10 @@ import com.example.tola.ui.theme.TolaPrimary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportItemScreen(
+    initialIsLost: Boolean = true,
     onNavigateBack: () -> Unit
 ) {
-    var isLost by remember { mutableStateOf(true) }
+    var isLost by remember(initialIsLost) { mutableStateOf(initialIsLost) }
 
     var itemName by remember {
         mutableStateOf("")

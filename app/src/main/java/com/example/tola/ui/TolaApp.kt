@@ -15,10 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.tola.ui.screens.ClaimOwnershipScreen
 import com.example.tola.ui.screens.HomeScreen
 import com.example.tola.ui.screens.ItemDetailsScreen
@@ -57,9 +59,13 @@ sealed class Screen(
     )
 
     data object ReportItem : Screen(
-        route = "report_item",
+        route = "report_item?isLost={isLost}",
         title = "Report Item"
-    )
+    ) {
+        fun createRoute(isLost: Boolean = true): String {
+            return "report_item?isLost=$isLost"
+        }
+    }
 
     data object ItemDetails : Screen(
         route = "item_details/{itemId}",
@@ -188,11 +194,11 @@ fun TolaApp() {
                     },
 
                     onReportLost = {
-                        navController.navigate(Screen.ReportItem.route)
+                        navController.navigate(Screen.ReportItem.createRoute(isLost = true))
                     },
 
                     onReportFound = {
-                        navController.navigate(Screen.ReportItem.route)
+                        navController.navigate(Screen.ReportItem.createRoute(isLost = false))
                     },
 
                     onProfileClick = {
@@ -257,9 +263,18 @@ fun TolaApp() {
             }
 
             // Report Item
-            composable(Screen.ReportItem.route) {
-
+            composable(
+                route = Screen.ReportItem.route,
+                arguments = listOf(
+                    navArgument("isLost") {
+                        type = NavType.BoolType
+                        defaultValue = true
+                    }
+                )
+            ) { backStackEntry ->
+                val isLost = backStackEntry.arguments?.getBoolean("isLost") ?: true
                 ReportItemScreen(
+                    initialIsLost = isLost,
                     onNavigateBack = {
                         navController.popBackStack()
                     }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Schedule
@@ -66,13 +67,14 @@ data class LostFoundFeedItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onSearchClick: () -> Unit,
+    onSearchClick: () -> Unit = {},
     onReportLost: () -> Unit,
     onReportFound: () -> Unit,
     onItemClick: (String) -> Unit,
     onProfileClick: () -> Unit
 ) {
     var selectedFilter by remember { mutableStateOf("All Posts") }
+    var searchQuery by remember { mutableStateOf("") }
 
     val items = remember {
         listOf(
@@ -106,10 +108,18 @@ fun HomeScreen(
         )
     }
 
-    val filteredItems = when (selectedFilter) {
-        "Lost Only" -> items.filter { !it.isFound }
-        "Found Only" -> items.filter { it.isFound }
-        else -> items
+    val filteredItems = items.filter { item ->
+        val matchesFilter = when (selectedFilter) {
+            "Lost Only" -> !item.isFound
+            "Found Only" -> item.isFound
+            else -> true
+        }
+        val matchesQuery = searchQuery.isBlank() ||
+                item.title.contains(searchQuery, ignoreCase = true) ||
+                item.description.contains(searchQuery, ignoreCase = true) ||
+                item.location.contains(searchQuery, ignoreCase = true)
+
+        matchesFilter && matchesQuery
     }
 
     LazyColumn(
@@ -141,8 +151,7 @@ fun HomeScreen(
                     IconButton(
                         onClick = {}
                     ) {
-                        Icon(imageVector = Icons.Default.NotificationsNone, contentDescription = "Notifications"
-                        )
+                        Icon(imageVector = Icons.Default.NotificationsNone, contentDescription = "Notifications")
                     }
 
                     Spacer(modifier = Modifier.width(4.dp))
@@ -176,17 +185,12 @@ fun HomeScreen(
             }
         }
 
-        // Search
+        // Search Input Bar
         item {
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onSearchClick()
-                    },
-                readOnly = true,
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text("Search lost or found items")
                 },
@@ -195,6 +199,16 @@ fun HomeScreen(
                         Icons.Default.Search,
                         contentDescription = "Search"
                     )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear search"
+                            )
+                        }
+                    }
                 },
                 shape = RoundedCornerShape(14.dp),
                 singleLine = true
