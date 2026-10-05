@@ -19,8 +19,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tola.ui.screens.ClaimOwnershipScreen
 import com.example.tola.ui.screens.HomeScreen
+import com.example.tola.ui.screens.ItemDetailsScreen
 import com.example.tola.ui.screens.ProfileScreen
+import com.example.tola.ui.screens.ReportItemScreen
+import com.example.tola.ui.screens.SearchScreen
 import com.example.tola.ui.screens.WelcomeLoginScreen
 
 sealed class Screen(
@@ -197,6 +201,30 @@ fun TolaApp() {
                 )
             }
 
+            // Search
+            composable(Screen.Search.route) {
+
+                SearchScreen(
+                    onItemClick = { itemId ->
+                        navController.navigate(
+                            Screen.ItemDetails.createRoute(itemId)
+                        )
+                    },
+
+                    onProfileClick = {
+                        navController.navigate(Screen.Profile.route)
+                    },
+
+                    onHomeClick = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                )
+            }
+
             // Profile
             composable(Screen.Profile.route) {
 
@@ -228,7 +256,66 @@ fun TolaApp() {
                 )
             }
 
+            // Report Item
+            composable(Screen.ReportItem.route) {
 
+                ReportItemScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // Item Details
+            composable(Screen.ItemDetails.route) { backStackEntry ->
+
+                val itemId =
+                    backStackEntry.arguments?.getString("itemId")
+                        ?: ""
+
+                ItemDetailsScreen(
+                    itemId = itemId,
+
+                    onBack = {
+                        navController.popBackStack()
+                    },
+
+                    onClaimClick = {
+                        navController.navigate(
+                            Screen.ClaimOwnership.createRoute(itemId)
+                        )
+                    }
+                )
+            }
+
+            // Claim Ownership
+            composable(Screen.ClaimOwnership.route) { backStackEntry ->
+
+                val itemId =
+                    backStackEntry.arguments?.getString("itemId")
+                        ?: ""
+
+                ClaimOwnershipScreen(
+                    itemId = itemId,
+
+                    onBack = {
+                        navController.popBackStack()
+                    },
+
+                    onClaimSubmitted = {
+
+                        navController.navigate(Screen.Home.route) {
+
+                            popUpTo(Screen.Home.route) {
+                                inclusive = false
+                            }
+
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
-        }
+    }
 }
+

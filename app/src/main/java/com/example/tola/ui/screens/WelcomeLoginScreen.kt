@@ -50,7 +50,7 @@ import com.example.tola.ui.theme.TolaPrimary
 @Composable
 fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    var email by remember { mutableStateOf("alex.chen@campus.edu") }
+    var email by remember { mutableStateOf("flashback.prince@campus.edu") }
     var password by remember { mutableStateOf("password123") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
@@ -197,24 +197,9 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Demo account information
-                Text(
-                    text = "Demo account",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "alex.chen@campus.edu",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
             } else {
 
-                // Simple Register UI
+                // Register UI
                 Text(
                     text = "Create your Tola account",
                     style = MaterialTheme.typography.titleLarge,
@@ -240,6 +225,7 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     shape = RoundedCornerShape(12.dp)
+
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
