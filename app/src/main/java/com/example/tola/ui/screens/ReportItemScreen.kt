@@ -45,8 +45,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tola.ui.theme.TolaFoundTag
-import com.example.tola.ui.theme.TolaLostOrange
+import com.example.tola.ui.theme.TolaFoundText
+import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,7 +137,7 @@ fun ReportItemScreen(
                 StatusButton(
                     text = "I Lost It",
                     selected = isLost,
-                    color = TolaLostOrange,
+                    color = TolaLostText,
                     modifier = Modifier.weight(1f)
                 ) {
                     isLost = true
@@ -146,7 +146,7 @@ fun ReportItemScreen(
                 StatusButton(
                     text = "I Found It",
                     selected = !isLost,
-                    color = TolaFoundTag,
+                    color = TolaFoundText,
                     modifier = Modifier.weight(1f)
                 ) {
                     isLost = false

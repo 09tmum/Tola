@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
-import com.example.tola.ui.theme.TolaSuccessGreen
 
 @Composable
 fun ClaimOwnershipScreen(

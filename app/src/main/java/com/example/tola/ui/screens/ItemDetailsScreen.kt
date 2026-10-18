@@ -41,9 +41,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tola.ui.theme.TolaFoundBackground
+import com.example.tola.ui.theme.TolaFoundText
+import com.example.tola.ui.theme.TolaLostBackground
+import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
-import com.example.tola.ui.theme.TolaSuccessGreen
 
 @Composable
 fun ItemDetailsScreen(
@@ -224,9 +227,9 @@ fun ItemDetailsScreen(
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = if (item.status == "FOUND") {
-                    TolaSuccessGreen.copy(alpha = 0.12f)
+                    TolaFoundBackground
                 } else {
-                    Color(0xFFFFF7ED)
+                    TolaLostBackground
                 }
             ) {
                 Text(
@@ -238,9 +241,9 @@ fun ItemDetailsScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (item.status == "FOUND") {
-                        TolaSuccessGreen
+                        TolaFoundText
                     } else {
-                        Color(0xFFF97316)
+                        TolaLostText
                     }
                 )
             }

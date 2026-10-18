@@ -49,8 +49,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tola.ui.theme.TolaFoundTag
-import com.example.tola.ui.theme.TolaLostOrange
+import com.example.tola.ui.theme.TolaFoundBackground
+import com.example.tola.ui.theme.TolaFoundText
+import com.example.tola.ui.theme.TolaLostBackground
+import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
 
@@ -228,7 +230,7 @@ fun HomeScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TolaLostOrange
+                        containerColor = TolaLostText
                     )
                 ) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
@@ -248,7 +250,7 @@ fun HomeScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TolaFoundTag
+                        containerColor = TolaFoundText
                     )
                 ) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
@@ -344,9 +346,9 @@ private fun LostFoundItemCard(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = if (item.isFound) {
-                        TolaPrimaryContainer
+                        TolaFoundBackground
                     } else {
-                        Color(0xFFFFF7ED)
+                        TolaLostBackground
                     }
                 ) {
                     Text(
@@ -358,9 +360,9 @@ private fun LostFoundItemCard(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (item.isFound) {
-                            TolaPrimary
+                            TolaFoundText
                         } else {
-                            TolaLostOrange
+                            TolaLostText
                         }
                     )
                 }

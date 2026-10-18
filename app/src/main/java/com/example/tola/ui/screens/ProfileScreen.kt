@@ -40,10 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tola.ui.theme.TolaLostOrange
+import com.example.tola.ui.theme.TolaLostBackground
+import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
-import com.example.tola.ui.theme.TolaSuccessGreen
 
 @Composable
 fun ProfileScreen(
@@ -213,7 +213,7 @@ fun ProfileScreen(
                                 )
                             }
 
-                            Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFF7ED)) {
+                            Surface(shape = RoundedCornerShape(8.dp), color = TolaLostBackground) {
                                 Text(
                                     text = "LOST",
                                     modifier = Modifier.padding(
@@ -222,7 +222,7 @@ fun ProfileScreen(
                                     ),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TolaLostOrange
+                                    color = TolaLostText
                                 )
                             }
                         }
@@ -233,7 +233,7 @@ fun ProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
-                            Text(text = "Active report", color = TolaLostOrange, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(text = "Active report", color = TolaLostText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
 
                             Spacer(modifier = Modifier.weight(1f))
 
