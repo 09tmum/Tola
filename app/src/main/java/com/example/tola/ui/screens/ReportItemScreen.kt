@@ -402,7 +402,8 @@ fun ReportItemScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TolaPrimary
+                    containerColor = TolaPrimary,
+                    contentColor = Color.White
                 )
             ) {
                 Text(
@@ -411,7 +412,8 @@ fun ReportItemScreen(
                     } else {
                         "Report Found Item"
                     },
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
 

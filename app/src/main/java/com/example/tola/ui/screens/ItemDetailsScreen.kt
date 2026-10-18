@@ -176,7 +176,8 @@ fun ItemDetailsScreen(
                             .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TolaPrimary
+                            containerColor = TolaPrimary,
+                            contentColor = Color.White
                         )
                     ) {
                         Text(
@@ -185,7 +186,8 @@ fun ItemDetailsScreen(
                             } else {
                                 "I Found This Item"
                             },
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                 }

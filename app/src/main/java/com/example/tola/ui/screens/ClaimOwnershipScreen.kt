@@ -403,20 +403,23 @@ fun ClaimOwnershipScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TolaPrimary
+                    containerColor = TolaPrimary,
+                    contentColor = Color.White
                 )
             ) {
 
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = Color.White
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = "Submit Claim",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
 

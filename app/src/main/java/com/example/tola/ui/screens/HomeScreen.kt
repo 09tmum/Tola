@@ -230,16 +230,22 @@ fun HomeScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TolaLostText
+                        containerColor = TolaPrimary,
+                        contentColor = Color.White
                     )
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
 
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
                         text = "Report Lost",
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
                     )
                 }
 
@@ -250,14 +256,23 @@ fun HomeScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TolaFoundText
+                        containerColor = TolaPrimary,
+                        contentColor = Color.White
                     )
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    Text(text = "Report Found", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Report Found",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                 }
             }
         }

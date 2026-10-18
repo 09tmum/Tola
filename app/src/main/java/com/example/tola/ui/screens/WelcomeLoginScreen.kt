@@ -203,9 +203,12 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                     enabled = isLoginEmailValid,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TolaPrimary,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Text("Login", fontWeight = FontWeight.Bold)
+                    Text("Login", fontWeight = FontWeight.Bold, color = Color.White)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -284,9 +287,12 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                     enabled = isRegEmailValid && regPassword.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TolaPrimary,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Text("Create Account", fontWeight = FontWeight.Bold)
+                    Text("Create Account", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
 
