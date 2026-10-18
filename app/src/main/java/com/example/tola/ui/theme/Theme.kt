@@ -18,18 +18,28 @@ val TolaShapes = Shapes(
 private val LightColorScheme = lightColorScheme(
     primary = TolaPrimary,
     onPrimary = Color.White,
-
     primaryContainer = TolaPrimaryContainer,
     onPrimaryContainer = TolaOnPrimaryContainer,
 
-    background = TolaBackground,
-    surface = TolaSurface,
-    surfaceVariant = TolaSurfaceVariant,
+    secondary = TolaTextSecondary,
+    onSecondary = Color.White,
 
+    background = TolaBackground,
     onBackground = TolaTextPrimary,
+
+    surface = TolaSurface,
     onSurface = TolaTextPrimary,
 
-    outline = TolaBorder
+    surfaceVariant = TolaSurfaceVariant,
+    onSurfaceVariant = TolaTextSecondary,
+
+    outline = TolaBorderStrong,
+    outlineVariant = TolaBorder,
+
+    error = TolaError,
+    onError = Color.White,
+    errorContainer = TolaErrorBackground,
+    onErrorContainer = TolaOnErrorBackground
 )
 
 @Composable
