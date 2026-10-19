@@ -27,6 +27,7 @@ import com.example.tola.ui.screens.ItemDetailsScreen
 import com.example.tola.ui.screens.ProfileScreen
 import com.example.tola.ui.screens.ReportItemScreen
 import com.example.tola.ui.screens.SearchScreen
+import com.example.tola.ui.screens.SplashScreen
 import com.example.tola.ui.screens.WelcomeLoginScreen
 
 sealed class Screen(
@@ -34,6 +35,11 @@ sealed class Screen(
     val title: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
+
+    data object Splash : Screen(
+        route = "splash",
+        title = "Splash"
+    )
 
     data object WelcomeLogin : Screen(
         route = "welcome_login",
@@ -156,10 +162,23 @@ fun TolaApp() {
         NavHost(
             navController = navController,
 
-            startDestination = Screen.WelcomeLogin.route,
+            startDestination = Screen.Splash.route,
 
             modifier = Modifier.padding(innerPadding)
         ) {
+
+            // Splash
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashFinished = {
+                        navController.navigate(Screen.WelcomeLogin.route) {
+                            popUpTo(Screen.Splash.route) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                )
+            }
 
             // Login
             composable(Screen.WelcomeLogin.route) {

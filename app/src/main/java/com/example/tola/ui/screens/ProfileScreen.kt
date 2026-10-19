@@ -95,7 +95,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "AC",
+                                text = "FP",
                                 color = TolaPrimary,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
@@ -129,7 +129,7 @@ fun ProfileScreen(
                                 Spacer(modifier = Modifier.width(5.dp))
 
                                 Text(
-                                    text = "alex.chen@campus.edu",
+                                    text = "flashback.prince@campus.edu",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 12.sp
                                 )
