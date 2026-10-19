@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.ui.theme.TolaFoundBackground
@@ -56,6 +57,7 @@ import com.example.tola.ui.theme.TolaLostBackground
 import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
+import com.example.tola.ui.theme.TolaTheme
 
 data class LostFoundFeedItem(
     val id: String,
@@ -71,10 +73,10 @@ data class LostFoundFeedItem(
 @Composable
 fun HomeScreen(
     onSearchClick: () -> Unit = {},
-    onReportLost: () -> Unit,
-    onReportFound: () -> Unit,
-    onItemClick: (String) -> Unit,
-    onProfileClick: () -> Unit
+    onReportLost: () -> Unit = {},
+    onReportFound: () -> Unit = {},
+    onItemClick: (String) -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All Posts") }
     var searchQuery by remember { mutableStateOf("") }
@@ -427,5 +429,19 @@ private fun LostFoundItemCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    TolaTheme {
+        HomeScreen(
+            onSearchClick = {},
+            onReportLost = {},
+            onReportFound = {},
+            onItemClick = {},
+            onProfileClick = {}
+        )
     }
 }

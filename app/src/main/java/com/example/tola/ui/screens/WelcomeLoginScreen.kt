@@ -43,9 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaTheme
 
 private fun isValidEmail(email: String): Boolean {
     return email.isNotBlank() && Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(email)
@@ -305,5 +307,13 @@ fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WelcomeLoginScreenPreview() {
+    TolaTheme {
+        WelcomeLoginScreen(onLoginSuccess = {})
     }
 }

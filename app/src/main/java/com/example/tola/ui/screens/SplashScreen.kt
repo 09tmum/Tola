@@ -27,9 +27,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaTheme
 import kotlinx.coroutines.delay
 
 @Composable
@@ -101,5 +103,13 @@ fun SplashScreen(
                 strokeWidth = 2.5.dp
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SplashScreenPreview() {
+    TolaTheme {
+        SplashScreen(onSplashFinished = {})
     }
 }
