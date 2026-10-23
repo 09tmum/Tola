@@ -52,7 +52,8 @@ import com.example.tola.ui.theme.TolaPrimaryContainer
 fun ItemDetailsScreen(
     itemId: String,
     onBack: () -> Unit,
-    onClaimClick: (String) -> Unit
+    onClaimClick: (String) -> Unit,
+    onReportFoundItemClick: ((String) -> Unit)? = null
 ) {
 
     // Temporary item data.
@@ -169,7 +170,11 @@ fun ItemDetailsScreen(
 
                     Button(
                         onClick = {
-                            onClaimClick(item.id)
+                            if (item.status == "FOUND") {
+                                onClaimClick(item.id)
+                            } else {
+                                onReportFoundItemClick?.invoke(item.id) ?: onClaimClick(item.id)
+                            }
                         },
                         modifier = Modifier
                             .weight(0.65f)

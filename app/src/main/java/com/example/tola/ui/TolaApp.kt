@@ -22,6 +22,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.tola.ui.screens.ClaimOwnershipScreen
+import com.example.tola.ui.screens.FoundItemReportScreen
 import com.example.tola.ui.screens.HomeScreen
 import com.example.tola.ui.screens.ItemDetailsScreen
 import com.example.tola.ui.screens.ProfileScreen
@@ -88,6 +89,15 @@ sealed class Screen(
     ) {
         fun createRoute(itemId: String): String {
             return "claim_ownership/$itemId"
+        }
+    }
+
+    data object FoundItemReport : Screen(
+        route = "found_item_report/{itemId}",
+        title = "Found Item Report"
+    ) {
+        fun createRoute(itemId: String): String {
+            return "found_item_report/$itemId"
         }
     }
 }
@@ -318,6 +328,12 @@ fun TolaApp() {
                         navController.navigate(
                             Screen.ClaimOwnership.createRoute(itemId)
                         )
+                    },
+
+                    onReportFoundItemClick = { id ->
+                        navController.navigate(
+                            Screen.FoundItemReport.createRoute(id)
+                        )
                     }
                 )
             }
@@ -346,6 +362,24 @@ fun TolaApp() {
 
                             launchSingleTop = true
                         }
+                    }
+                )
+            }
+
+            // Found Item Report
+            composable(Screen.FoundItemReport.route) { backStackEntry ->
+
+                val itemId =
+                    backStackEntry.arguments?.getString("itemId")
+                        ?: ""
+
+                FoundItemReportScreen(
+                    itemId = itemId,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSubmitReport = {
+                        navController.popBackStack()
                     }
                 )
             }
