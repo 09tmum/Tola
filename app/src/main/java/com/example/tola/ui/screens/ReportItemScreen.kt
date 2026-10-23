@@ -396,9 +396,12 @@ fun ReportItemScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val isFormValid = itemName.isNotBlank() && location.isNotBlank()
+
             // Submit
             Button(
                 onClick = onNavigateBack,
+                enabled = isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
