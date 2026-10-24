@@ -1,5 +1,7 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -119,5 +121,22 @@ internal fun AdminStatusChip(
 internal fun AdminEmptyState(message: String) {
     AdminPanelCard {
         Text(message, style = MaterialTheme.typography.bodyMedium, color = TolaTextMuted)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AdminUiComponentsPreview() {
+    TolaTheme {
+        AdminScreenLayout(
+            title = "Admin Component Preview",
+            subtitle = "Overview of admin UI components"
+        ) {
+            AdminPanelCard {
+                Text("Panel Card Content")
+                AdminStatusChip(label = "Active", background = Color(0xFFDCFCE7), foreground = Color(0xFF166534))
+            }
+            AdminEmptyState("No items available.")
+        }
     }
 }

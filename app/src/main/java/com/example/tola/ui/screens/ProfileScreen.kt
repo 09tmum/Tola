@@ -1,5 +1,7 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -407,5 +409,17 @@ private fun ProfileStatCard(
             Text(
                 text = label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProfileScreenPreview() {
+    TolaTheme {
+        ProfileScreen(
+            onHomeClick = {},
+            onSearchClick = {},
+            onLogout = {}
+        )
     }
 }

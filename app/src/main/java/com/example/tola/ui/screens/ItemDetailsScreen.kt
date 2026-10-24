@@ -1,5 +1,7 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -473,5 +475,17 @@ private fun DetailSection(
         Spacer(modifier = Modifier.height(8.dp))
 
         content()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ItemDetailsScreenPreview() {
+    TolaTheme {
+        ItemDetailsScreen(
+            itemId = "LF-1",
+            onBack = {},
+            onClaimClick = {}
+        )
     }
 }

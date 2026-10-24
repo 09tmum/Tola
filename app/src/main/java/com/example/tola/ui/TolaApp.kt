@@ -1,5 +1,7 @@
 package com.example.tola.ui
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -283,85 +285,101 @@ fun TolaApp() {
 
             // Home
             composable(Screen.Home.route) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    HomeScreen(
+                        onSearchClick = {
+                            navController.navigate(Screen.Search.route)
+                        },
 
-                HomeScreen(
-                    onSearchClick = {
-                        navController.navigate(Screen.Search.route)
-                    },
+                        onItemClick = { itemId ->
+                            navController.navigate(
+                                Screen.ItemDetails.createRoute(itemId)
+                            )
+                        },
 
-                    onItemClick = { itemId ->
-                        navController.navigate(
-                            Screen.ItemDetails.createRoute(itemId)
-                        )
-                    },
+                        onReportLost = {
+                            navController.navigate(Screen.ReportItem.createRoute(isLost = true))
+                        },
 
-                    onReportLost = {
-                        navController.navigate(Screen.ReportItem.createRoute(isLost = true))
-                    },
+                        onReportFound = {
+                            navController.navigate(Screen.ReportItem.createRoute(isLost = false))
+                        },
 
-                    onReportFound = {
-                        navController.navigate(Screen.ReportItem.createRoute(isLost = false))
-                    },
-
-                    onProfileClick = {
-                        navController.navigate(Screen.Profile.route)
-                    }
-                )
+                        onProfileClick = {
+                            navController.navigate(Screen.Profile.route)
+                        }
+                    )
+                }
             }
 
             // Search
             composable(Screen.Search.route) {
 
-                SearchScreen(
-                    onItemClick = { itemId ->
-                        navController.navigate(
-                            Screen.ItemDetails.createRoute(itemId)
-                        )
-                    },
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
 
-                    onProfileClick = {
-                        navController.navigate(Screen.Profile.route)
-                    },
+                    SearchScreen(
+                        onItemClick = { itemId ->
+                            navController.navigate(
+                                Screen.ItemDetails.createRoute(itemId)
+                            )
+                        },
 
-                    onHomeClick = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) {
-                                inclusive = true
+                        onProfileClick = {
+                            navController.navigate(Screen.Profile.route)
+                        },
+
+                        onHomeClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) {
+                                    inclusive = true
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             // Profile
             composable(Screen.Profile.route) {
 
-                ProfileScreen(
-                    onHomeClick = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) {
-                                inclusive = true
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    ProfileScreen(
+                        onHomeClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) {
+                                    inclusive = true
+                                }
                             }
-                        }
-                    },
-                    onLogout = {
+                        },
+                        onLogout = {
 
-                        navController.navigate(Screen.WelcomeLogin.route) {
+                            navController.navigate(Screen.WelcomeLogin.route) {
 
-                            popUpTo(0) {
-                                inclusive = true
+                                popUpTo(0) {
+                                    inclusive = true
+                                }
+
+                                launchSingleTop = true
                             }
+                        },
 
-                            launchSingleTop = true
+                        onSearchClick = {
+                            navController.navigate(Screen.Search.route)
                         }
-                    },
-
-                    onSearchClick = {
-                        navController.navigate(Screen.Search.route)
-                    }
-
-
-                )
+                    )
+                }
             }
 
             // Report Item
@@ -375,12 +393,19 @@ fun TolaApp() {
                 )
             ) { backStackEntry ->
                 val isLost = backStackEntry.arguments?.getBoolean("isLost") ?: true
-                ReportItemScreen(
-                    initialIsLost = isLost,
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
+
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    ReportItemScreen(
+                        initialIsLost = isLost,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
 
             // Item Details
@@ -390,25 +415,31 @@ fun TolaApp() {
                     backStackEntry.arguments?.getString("itemId")
                         ?: ""
 
-                ItemDetailsScreen(
-                    itemId = itemId,
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    ItemDetailsScreen(
+                        itemId = itemId,
 
-                    onBack = {
-                        navController.popBackStack()
-                    },
+                        onBack = {
+                            navController.popBackStack()
+                        },
 
-                    onClaimClick = {
-                        navController.navigate(
-                            Screen.ClaimOwnership.createRoute(itemId)
-                        )
-                    },
+                        onClaimClick = {
+                            navController.navigate(
+                                Screen.ClaimOwnership.createRoute(itemId)
+                            )
+                        },
 
-                    onReportFoundItemClick = { id ->
-                        navController.navigate(
-                            Screen.FoundItemReport.createRoute(id)
-                        )
-                    }
-                )
+                        onReportFoundItemClick = { id ->
+                            navController.navigate(
+                                Screen.FoundItemReport.createRoute(id)
+                            )
+                        }
+                    )
+                }
             }
 
             // Claim Ownership
@@ -418,25 +449,32 @@ fun TolaApp() {
                     backStackEntry.arguments?.getString("itemId")
                         ?: ""
 
-                ClaimOwnershipScreen(
-                    itemId = itemId,
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
 
-                    onBack = {
-                        navController.popBackStack()
-                    },
+                    ClaimOwnershipScreen(
+                        itemId = itemId,
 
-                    onClaimSubmitted = {
+                        onBack = {
+                            navController.popBackStack()
+                        },
 
-                        navController.navigate(Screen.Home.route) {
+                        onClaimSubmitted = {
 
-                            popUpTo(Screen.Home.route) {
-                                inclusive = false
+                            navController.navigate(Screen.Home.route) {
+
+                                popUpTo(Screen.Home.route) {
+                                    inclusive = false
+                                }
+
+                                launchSingleTop = true
                             }
-
-                            launchSingleTop = true
                         }
-                    }
-                )
+                    )
+                }
             }
 
             // Found Item Report
@@ -446,15 +484,21 @@ fun TolaApp() {
                     backStackEntry.arguments?.getString("itemId")
                         ?: ""
 
-                FoundItemReportScreen(
-                    itemId = itemId,
-                    onBack = {
-                        navController.popBackStack()
-                    },
-                    onSubmitReport = {
-                        navController.popBackStack()
-                    }
-                )
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    FoundItemReportScreen(
+                        itemId = itemId,
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        onSubmitReport = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
 
             // Admin Dashboard
@@ -552,6 +596,14 @@ private fun RoleGate(
         LaunchedEffect(currentRole, requiredRole) {
             onAccessDenied()
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TolaAppPreview() {
+    TolaTheme {
+        TolaApp()
     }
 }
 

@@ -200,7 +200,8 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                 Button(
                     onClick = {
                         if (isLoginEmailValid) {
-                            onLoginSuccess()
+                            val role = if (email.contains("admin", ignoreCase = true)) TolaUserRole.ADMIN else TolaUserRole.STUDENT
+                            onLoginSuccess(role)
                         }
                     },
                     enabled = isLoginEmailValid,
@@ -284,7 +285,8 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                 Button(
                     onClick = {
                         if (isRegEmailValid) {
-                            onLoginSuccess()
+                            val role = if (regEmail.contains("admin", ignoreCase = true)) TolaUserRole.ADMIN else TolaUserRole.STUDENT
+                            onLoginSuccess(role)
                         }
                     },
                     enabled = isRegEmailValid && regPassword.isNotBlank(),

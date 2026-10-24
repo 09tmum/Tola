@@ -1,5 +1,7 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -433,5 +435,17 @@ fun ClaimOwnershipScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ClaimOwnershipScreenPreview() {
+    TolaTheme {
+        ClaimOwnershipScreen(
+            itemId = "LF-1024",
+            onBack = {},
+            onClaimSubmitted = {}
+        )
     }
 }
