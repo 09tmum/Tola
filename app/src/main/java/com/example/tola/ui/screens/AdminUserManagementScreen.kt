@@ -1,14 +1,15 @@
 package com.example.tola.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,9 +17,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.tola.lostfound.ui.theme.*
+import com.example.tola.ui.theme.TolaBorderStrong
+import com.example.tola.ui.theme.TolaFoundBackground
+import com.example.tola.ui.theme.TolaFoundText
+import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaSurfaceVariant
+import com.example.tola.ui.theme.TolaTextMuted
+import com.example.tola.ui.theme.TolaTextPrimary
+import com.example.tola.ui.theme.TolaTextSecondary
+import com.example.tola.ui.theme.TolaTheme
 
 @Composable
 fun AdminUserManagementScreen(
@@ -50,30 +61,33 @@ fun AdminUserManagementScreen(
                 cursorColor = TolaPrimary
             )
         )
-        Text("${visibleUsers.size} user(s)", style = MaterialTheme.typography.labelLarge, color = TolaTextSecondary)
+        Text("${visibleUsers.size} user(s)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = TolaTextSecondary)
         if (visibleUsers.isEmpty()) {
             AdminEmptyState(if (users.isEmpty()) "No user records are connected yet." else "No users match your search.")
         } else {
             visibleUsers.forEach { user ->
                 AdminPanelCard {
-                    Text(user.name, style = MaterialTheme.typography.titleMedium, color = TolaTextPrimary)
+                    Text(user.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
                     Text(user.email, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
                     Text("ID: ${user.id} · Role: ${user.role}", style = MaterialTheme.typography.bodySmall, color = TolaTextMuted)
                     AdminStatusChip(
                         label = if (user.isActive) "ACTIVE" else "SUSPENDED",
-                        background = if (user.isActive) TolaPrimaryContainer else TolaSurfaceVariant,
-                        foreground = if (user.isActive) TolaOnPrimaryContainer else TolaTextSecondary
+                        background = if (user.isActive) TolaFoundBackground else TolaSurfaceVariant,
+                        foreground = if (user.isActive) TolaFoundText else TolaTextSecondary
                     )
-                    androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = { onViewUser(user) },
                             shape = RoundedCornerShape(10.dp)
-                        ) { Text("View details", color = TolaPrimary) }
+                        ) { Text("View details", color = TolaPrimary, fontWeight = FontWeight.SemiBold) }
                         Button(
                             onClick = { onToggleUserStatus(user) },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
-                        ) { Text(if (user.isActive) "Suspend" else "Activate") }
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TolaPrimary,
+                                contentColor = Color.White
+                            )
+                        ) { Text(if (user.isActive) "Suspend" else "Activate", fontWeight = FontWeight.Bold, color = Color.White) }
                     }
                 }
             }

@@ -12,24 +12,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tola.lostfound.ui.theme.TolaBackground
-import com.tola.lostfound.ui.theme.TolaBorder
-import com.tola.lostfound.ui.theme.TolaPrimary
-import com.tola.lostfound.ui.theme.TolaSurface
-import com.tola.lostfound.ui.theme.TolaTextMuted
-import com.tola.lostfound.ui.theme.TolaTextPrimary
-import com.tola.lostfound.ui.theme.TolaTextSecondary
+import com.example.tola.ui.theme.TolaBackground
+import com.example.tola.ui.theme.TolaBorder
+import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaSurface
+import com.example.tola.ui.theme.TolaTextMuted
+import com.example.tola.ui.theme.TolaTextPrimary
+import com.example.tola.ui.theme.TolaTextSecondary
 
 @Composable
 internal fun AdminScreenLayout(
@@ -51,13 +55,23 @@ internal fun AdminScreenLayout(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Tola Admin", style = MaterialTheme.typography.labelLarge, color = TolaPrimary)
-                Text(title, style = MaterialTheme.typography.headlineSmall, color = TolaTextPrimary)
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
-            }
             if (onBack != null) {
-                TextButton(onClick = onBack) { Text("Back", color = TolaPrimary) }
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TolaTextPrimary
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text("Tola Admin", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = TolaPrimary)
+                Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
             }
         }
         content()
@@ -95,7 +109,8 @@ internal fun AdminStatusChip(
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            style = MaterialTheme.typography.labelMedium
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
         )
     }
 }

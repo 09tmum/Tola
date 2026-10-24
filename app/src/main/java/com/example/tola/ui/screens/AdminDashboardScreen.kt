@@ -1,10 +1,8 @@
 package com.example.tola.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -13,11 +11,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.tola.ui.theme.TolaBorderStrong
 import com.example.tola.ui.theme.TolaPrimary
-import com.example.tola.ui.theme.TolaSurface
 import com.example.tola.ui.theme.TolaTextPrimary
 import com.example.tola.ui.theme.TolaTextSecondary
 import com.example.tola.ui.theme.TolaTheme
@@ -41,7 +39,7 @@ fun AdminDashboardScreen(
         title = "Dashboard",
         subtitle = "Welcome, $adminName. Here's the current overview.",
     ) {
-        Text("Overview", style = MaterialTheme.typography.titleLarge, color = TolaTextPrimary)
+        Text("Overview", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AdminStatCard("Total users", totalUsers, Modifier.weight(1f))
             AdminStatCard("Lost reports", lostReports, Modifier.weight(1f))
@@ -52,7 +50,7 @@ fun AdminDashboardScreen(
         }
         AdminStatCard("Recovered items", recoveredItems, Modifier.fillMaxWidth())
 
-        Text("Management", style = MaterialTheme.typography.titleLarge, color = TolaTextPrimary)
+        Text("Management", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
         AdminDashboardAction("User Management", "View and manage registered accounts.", "Manage users", onUsersClick)
         AdminDashboardAction("Report Management", "Review lost and found item reports.", "Manage reports", onReportsClick)
         AdminDashboardAction("Claim Review", "Review claims and ownership evidence.", "Review claims", onClaimsClick)
@@ -63,7 +61,7 @@ fun AdminDashboardScreen(
             onClick = onLogoutClick,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
-        ) { Text("Logout", color = TolaPrimary) }
+        ) { Text("Logout", color = TolaPrimary, fontWeight = FontWeight.SemiBold) }
     }
 }
 
@@ -71,7 +69,7 @@ fun AdminDashboardScreen(
 private fun AdminStatCard(title: String, value: Int, modifier: Modifier = Modifier) {
     AdminPanelCard {
         Text(title, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
-        Text(value.toString(), style = MaterialTheme.typography.headlineMedium, color = TolaPrimary)
+        Text(value.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = TolaPrimary)
     }
 }
 
@@ -83,13 +81,16 @@ private fun AdminDashboardAction(
     onClick: () -> Unit
 ) {
     AdminPanelCard {
-        Text(title, style = MaterialTheme.typography.titleMedium, color = TolaTextPrimary)
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
         Text(description, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
         Button(
             onClick = onClick,
             shape = RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
-        ) { Text(buttonText) }
+            colors = ButtonDefaults.buttonColors(
+                containerColor = TolaPrimary,
+                contentColor = Color.White
+            )
+        ) { Text(buttonText, fontWeight = FontWeight.Bold, color = Color.White) }
     }
 }
 
