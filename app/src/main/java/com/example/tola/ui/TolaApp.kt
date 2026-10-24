@@ -36,6 +36,12 @@ import com.example.tola.ui.screens.ReportItemScreen
 import com.example.tola.ui.screens.SearchScreen
 import com.example.tola.ui.screens.SplashScreen
 import com.example.tola.ui.screens.WelcomeLoginScreen
+import com.example.tola.ui.screens.AdminCategoryManagementScreen
+import com.example.tola.ui.screens.AdminClaimReviewScreen
+import com.example.tola.ui.screens.AdminNotificationsScreen
+import com.example.tola.ui.screens.AdminReportManagementScreen
+import com.example.tola.ui.screens.AdminUserManagementScreen
+import com.example.tola.ui.screens.AdminDashboardScreen
 import com.example.tola.ui.TolaUserRole
 
 sealed class Screen(
@@ -449,6 +455,85 @@ fun TolaApp() {
                         navController.popBackStack()
                     }
                 )
+            }
+
+            // Admin Dashboard
+            composable(Screen.AdminDashboard.route) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    AdminDashboardScreen(
+                        onUsersClick = {
+                            navController.navigate(Screen.AdminUsers.route)
+                        },
+                        onReportsClick = {
+                            navController.navigate(Screen.AdminReports.route)
+                        },
+                        onClaimsClick = {
+                            navController.navigate(Screen.AdminClaims.route)
+                        },
+                        onCategoriesClick = {
+                            navController.navigate(Screen.AdminCategories.route)
+                        },
+                        onNotificationsClick = {
+                            navController.navigate(Screen.AdminNotifications.route)
+                        },
+                        onLogoutClick = {
+                            currentRole = null
+                            navController.navigate(Screen.WelcomeLogin.route) {
+                                popUpTo(navController.graph.id)
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
+            }
+
+            // Admin User Management
+            composable(Screen.AdminUsers.route) {
+                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                    AdminUserManagementScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // Admin Report Management
+            composable(Screen.AdminReports.route) {
+                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                    AdminReportManagementScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // Admin Claim Review
+            composable(Screen.AdminClaims.route) {
+                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                    AdminClaimReviewScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // Admin category management
+            composable(Screen.AdminCategories.route) {
+                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                    AdminCategoryManagementScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // Admin notifications management
+            composable(Screen.AdminNotifications.route) {
+                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                    AdminNotificationsScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
