@@ -235,7 +235,16 @@ fun TolaApp() {
             composable(Screen.WelcomeLogin.route) {
 
                 WelcomeLoginScreen(
-                    onLoginSuccess = {
+                    onLoginSuccess = { verfiedRole ->
+                        currentRole = verfiedRole
+
+                        val destination = when (verfiedRole) {
+                            TolaUserRole.STUDENT ->
+                                Screen.Home.route
+
+                            TolaUserRole.ADMIN ->
+                                Screen.AdminDashboard.route
+                        }
 
                         navController.navigate(Screen.Home.route) {
 

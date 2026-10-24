@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tola.ui.TolaUserRole
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaTheme
 
@@ -54,7 +55,7 @@ private fun isValidEmail(email: String): Boolean {
 }
 
 @Composable
-fun WelcomeLoginScreen(onLoginSuccess: () -> Unit) {
+fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
     // Login state
