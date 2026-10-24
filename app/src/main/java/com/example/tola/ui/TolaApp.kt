@@ -182,6 +182,7 @@ fun TolaApp() {
             popUpTo(navController.graph.id) {
                 inclusive = true
             }
+            launchSingleTop = true
         }
     }
 
