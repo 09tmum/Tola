@@ -13,6 +13,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -30,6 +35,7 @@ import com.example.tola.ui.screens.ReportItemScreen
 import com.example.tola.ui.screens.SearchScreen
 import com.example.tola.ui.screens.SplashScreen
 import com.example.tola.ui.screens.WelcomeLoginScreen
+import com.example.tola.ui.TolaUserRole
 
 sealed class Screen(
     val route: String,
@@ -100,6 +106,37 @@ sealed class Screen(
             return "found_item_report/$itemId"
         }
     }
+
+    data object AdminDashboard : Screen(
+        route = "admin_dashboard",
+        title = "Admin Dashboard"
+    )
+
+    object AdminUsers : Screen(
+        route = "admin_users",
+        title = "Admin Users"
+    )
+
+    object AdminReports : Screen(
+        route = "admin_reports",
+        title = "Admin Reports"
+    )
+
+    object AdminClaims : Screen(
+        route = "admin_claims",
+        title = "Admin Claims"
+    )
+
+    object AdminCategories : Screen(
+        route = "admin_categories",
+        title = "Admin Categories"
+    )
+
+    object AdminNotifications : Screen(
+        route = "admin_notifications",
+        title = "Admin Notifications"
+    )
+
 }
 
 @Composable
@@ -118,6 +155,10 @@ fun TolaApp() {
     )
 
     val showBottomBar = currentRoute in bottomBarRoutes
+
+    var currentRole by rememberSaveable {
+        mutableStateOf<TolaUserRole?>(null)
+    }
 
     Scaffold(
         bottomBar = {
