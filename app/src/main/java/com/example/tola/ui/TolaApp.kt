@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.runtime.LaunchedEffect
 import com.example.tola.ui.screens.ClaimOwnershipScreen
 import com.example.tola.ui.screens.FoundItemReportScreen
 import com.example.tola.ui.screens.HomeScreen
@@ -158,6 +159,22 @@ fun TolaApp() {
 
     var currentRole by rememberSaveable {
         mutableStateOf<TolaUserRole?>(null)
+    }
+
+    val redirectToAllowedScreen: () -> Unit = {
+        val destination = when (currentRole) {
+            TolaUserRole.STUDENT ->
+                Screen.Home.route
+            TolaUserRole.ADMIN ->
+                Screen.AdminDashboard.route
+            null -> Screen.WelcomeLogin.route
+        }
+
+        navController.navigate(destination) {
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+        }
     }
 
     Scaffold(
@@ -433,6 +450,22 @@ fun TolaApp() {
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun RoleGate(
+    currentRole: TolaUserRole?,
+    requiredRole: TolaUserRole,
+    onAccessDenied: () -> Unit,
+    content: @Composable () -> Unit
+){
+    if (currentRole == requiredRole) {
+        content()
+    } else {
+        LaunchedEffect(currentRole, requiredRole) {
+            onAccessDenied()
         }
     }
 }
