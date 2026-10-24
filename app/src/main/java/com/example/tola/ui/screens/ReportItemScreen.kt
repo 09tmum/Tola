@@ -20,20 +20,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,8 +93,82 @@ fun ReportItemScreen(
         mutableStateOf("")
     }
 
+    var showDatePicker by remember {
+        mutableStateOf(false)
+    }
+
+    var time by remember {
+        mutableStateOf("")
+    }
+
+    var showTimePicker by remember {
+        mutableStateOf(false)
+    }
+
     var categoryExpanded by remember {
         mutableStateOf(false)
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            formatter.timeZone = TimeZone.getTimeZone("UTC")
+                            date = formatter.format(Date(millis))
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = 12,
+            initialMinute = 0,
+            is24Hour = false
+        )
+        TimePickerDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val cal = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            set(Calendar.MINUTE, timePickerState.minute)
+                        }
+                        val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+                        time = timeFormatter.format(cal.time)
+                        showTimePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Cancel")
+                }
+            },
+            title = { Text("Select time") }
+        ) {
+            TimePicker(state = timePickerState)
+        }
     }
 
     val categories = listOf(
@@ -305,24 +393,69 @@ fun ReportItemScreen(
 
             Spacer(modifier = Modifier.height(7.dp))
 
-            OutlinedTextField(
-                value = date,
-                onValueChange = {
-                    date = it
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text("e.g. 2 October 2026")
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = null
-                    )
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text("Select date (DD/MM/YYYY)")
+                    },
+                    leadingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Select date"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Time
+            Text(
+                text = "Time (optional)",
+                fontWeight = FontWeight.SemiBold
             )
+
+            Spacer(modifier = Modifier.height(7.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = time,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text("Select time (e.g. 2:30 PM)")
+                    },
+                    leadingIcon = {
+                        IconButton(onClick = { showTimePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Select time"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showTimePicker = true }
+                )
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 

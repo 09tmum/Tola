@@ -1,7 +1,9 @@
 package com.example.tola.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +16,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +33,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,9 +87,73 @@ fun FoundItemReportScreen(
     var timeFound by rememberSaveable { mutableStateOf("") }
     var additionalDetails by rememberSaveable { mutableStateOf("") }
     var attemptedSubmit by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     val locationError = attemptedSubmit && locationFound.isBlank()
     val dateError = attemptedSubmit && dateFound.isBlank()
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            formatter.timeZone = TimeZone.getTimeZone("UTC")
+                            dateFound = formatter.format(Date(millis))
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = 12,
+            initialMinute = 0,
+            is24Hour = false
+        )
+        TimePickerDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val cal = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            set(Calendar.MINUTE, timePickerState.minute)
+                        }
+                        val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+                        timeFound = timeFormatter.format(cal.time)
+                        showTimePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Cancel")
+                }
+            },
+            title = { Text("Select time") }
+        ) {
+            TimePicker(state = timePickerState)
+        }
+    }
 
     Scaffold(
         containerColor = TolaBackground,
@@ -177,43 +257,74 @@ fun FoundItemReportScreen(
                 )
             )
 
-            OutlinedTextField(
-                value = dateFound,
-                onValueChange = { dateFound = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Date found *") },
-                placeholder = { Text("DD/MM/YYYY") },
-                singleLine = true,
-                isError = dateError,
-                supportingText = {
-                    if (dateError) {
-                        Text("Please enter the date the item was found.", color = TolaError)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = TolaPrimary,
-                    unfocusedBorderColor = TolaBorderStrong,
-                    focusedLabelColor = TolaPrimary,
-                    cursorColor = TolaPrimary
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = dateFound,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Date found *") },
+                    placeholder = { Text("Select date (DD/MM/YYYY)") },
+                    singleLine = true,
+                    isError = dateError,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Select date"
+                            )
+                        }
+                    },
+                    supportingText = {
+                        if (dateError) {
+                            Text("Please enter the date the item was found.", color = TolaError)
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TolaPrimary,
+                        unfocusedBorderColor = TolaBorderStrong,
+                        focusedLabelColor = TolaPrimary,
+                        cursorColor = TolaPrimary
+                    )
                 )
-            )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true }
+                )
+            }
 
-            OutlinedTextField(
-                value = timeFound,
-                onValueChange = { timeFound = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Time found (optional)") },
-                placeholder = { Text("e.g. 14:30") },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = TolaPrimary,
-                    unfocusedBorderColor = TolaBorderStrong,
-                    cursorColor = TolaPrimary
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = timeFound,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Time found (optional)") },
+                    placeholder = { Text("Select time (e.g. 2:30 PM)") },
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showTimePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Select time"
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TolaPrimary,
+                        unfocusedBorderColor = TolaBorderStrong,
+                        cursorColor = TolaPrimary
+                    )
                 )
-            )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showTimePicker = true }
+                )
+            }
 
             OutlinedTextField(
                 value = additionalDetails,
