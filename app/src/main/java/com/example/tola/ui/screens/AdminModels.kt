@@ -1,4 +1,4 @@
-package com.tola.lostfound.ui.screens
+package com.example.tola.ui.screens
 
 /** UI models for the Tola admin screens. Replace sample values with repository data. */
 data class AdminUser(

@@ -1,4 +1,4 @@
-package com.tola.lostfound.ui.screens
+package com.example.tola.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,12 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.tola.lostfound.ui.theme.TolaBorderStrong
-import com.tola.lostfound.ui.theme.TolaPrimary
-import com.tola.lostfound.ui.theme.TolaSurface
-import com.tola.lostfound.ui.theme.TolaTextPrimary
-import com.tola.lostfound.ui.theme.TolaTextSecondary
-import com.tola.lostfound.ui.theme.TolaTheme
+import com.example.tola.ui.theme.TolaBorderStrong
+import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaSurface
+import com.example.tola.ui.theme.TolaTextPrimary
+import com.example.tola.ui.theme.TolaTextSecondary
+import com.example.tola.ui.theme.TolaTheme
 
 @Composable
 fun AdminDashboardScreen(

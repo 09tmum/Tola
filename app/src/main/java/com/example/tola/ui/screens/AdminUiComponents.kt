@@ -1,4 +1,4 @@
-package com.tola.lostfound.ui.screens
+package com.example.tola.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
