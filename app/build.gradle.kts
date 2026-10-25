@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -10,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.tola"
+        applicationId = "lostit.foundit.tola"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
@@ -46,6 +47,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.9.6")
+    // Firebase version management
+    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+    // Cloud Firestore
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

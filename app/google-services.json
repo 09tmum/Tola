@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "87889686509",
+    "project_id": "tola-campus-lost-and-found",
+    "storage_bucket": "tola-campus-lost-and-found.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87889686509:android:b12b8eea000ae163ae01e4",
+        "android_client_info": {
+          "package_name": "lostit.foundit.tola"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8XIvLIP6luIi7G2ZCrjBMHJ9Lj8qIDg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
