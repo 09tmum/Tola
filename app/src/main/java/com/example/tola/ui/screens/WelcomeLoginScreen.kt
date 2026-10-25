@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,25 +50,75 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.ui.TolaUserRole
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaTheme
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.firestore.FirebaseFirestoreException
+import kotlinx.coroutines.launch
 
 private fun isValidEmail(email: String): Boolean {
-    return email.isNotBlank() && Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(email)
+    return email.isNotBlank() &&
+            Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+                .matches(email.trim())
+}
+
+private fun authErrorMessage(error: Exception): String {
+    return when (error) {
+        is FirebaseAuthUserCollisionException ->
+            "An account with this email already exists. Please log in."
+
+        is FirebaseAuthWeakPasswordException ->
+            "Your password is too weak. Use at least 6 characters."
+
+        is FirebaseAuthInvalidCredentialsException ->
+            "The email address or credentials are invalid."
+
+        is FirebaseAuthInvalidUserException ->
+            "No account was found for these credentials. Please check your details."
+
+        is FirebaseNetworkException ->
+            "Network error. Check your internet connection and try again."
+
+        is FirebaseFirestoreException -> {
+            when (error.code) {
+                FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                    "Firestore access was denied. Check your security rules."
+
+                FirebaseFirestoreException.Code.UNAVAILABLE ->
+                    "The service is temporarily unavailable. Try again."
+
+                else ->
+                    "We couldn't save or retrieve your profile. Please try again."
+            }
+        }
+
+        is IllegalArgumentException ->
+            error.message ?: "Please check the information you entered."
+
+        else ->
+            "Something went wrong. Please try again."
+    }
 }
 
 @Composable
-fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
+fun WelcomeLoginScreen(
+    onLoginSuccess: (TolaUserRole) -> Unit
+) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Login state
-    var email by remember { mutableStateOf("flashback.prince@campus.edu") }
-    var password by remember { mutableStateOf("password123") }
+    // Login fields
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
 
-    // Register state
+    // Registration fields
     var regFullName by remember { mutableStateOf("") }
     var regStudentId by remember { mutableStateOf("") }
     var regEmail by remember { mutableStateOf("") }
@@ -76,16 +128,25 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
     var regPasswordVisible by remember { mutableStateOf(false) }
     var regConfirmPasswordVisible by remember { mutableStateOf(false) }
 
+    // Firebase operation state
+    var isLoading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var messageIsError by remember { mutableStateOf(true) }
+
+    val repository = remember { FirebaseAuthRepository() }
+    val scope = rememberCoroutineScope()
+
     val isLoginEmailValid = isValidEmail(email)
     val isRegEmailValid = isValidEmail(regEmail)
     val passwordsMatch = regPassword == regConfirmPassword
 
-    val isRegisterValid = regFullName.trim().isNotBlank() &&
-            regStudentId.trim().isNotBlank() &&
-            isRegEmailValid &&
-            regPassword.isNotBlank() &&
-            regConfirmPassword.isNotBlank() &&
-            passwordsMatch
+    val isRegisterValid =
+        regFullName.trim().isNotBlank() &&
+                regStudentId.trim().isNotBlank() &&
+                isRegEmailValid &&
+                regPassword.length >= 6 &&
+                regConfirmPassword.isNotBlank() &&
+                passwordsMatch
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -100,9 +161,12 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Tola Logo
+            // Tola logo
             Box(
-                modifier = Modifier.size(64.dp).clip(CircleShape).background(TolaPrimary),
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(TolaPrimary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -114,7 +178,13 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(18.dp))
-            Text("Welcome to Tola", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+
+            Text(
+                text = "Welcome to Tola",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
@@ -125,20 +195,25 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Login / Register Tabs
             TabRow(
                 selectedTabIndex = selectedTab,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Tab(
                     selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
+                    onClick = {
+                        selectedTab = 0
+                        message = null
+                    },
                     text = { Text("Login") }
                 )
 
                 Tab(
                     selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
+                    onClick = {
+                        selectedTab = 1
+                        message = null
+                    },
                     text = { Text("Register") }
                 )
             }
@@ -146,45 +221,70 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             if (selectedTab == 0) {
-                // Email input
+                // Login email
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { input -> email = input.filter { !it.isWhitespace() } },
+                    onValueChange = {
+                        email = it.filter { char -> !char.isWhitespace() }
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Email") },
                     placeholder = { Text("Enter your email") },
                     singleLine = true,
+                    enabled = !isLoading,
                     isError = email.isNotEmpty() && !isLoginEmailValid,
                     supportingText = {
                         if (email.isNotEmpty() && !isLoginEmailValid) {
-                            Text("Please enter a valid email address (e.g. user@campus.edu)")
+                            Text("Enter a valid email address.")
                         }
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Password input
+                // Login password
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = {
+                        password = it
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Password") },
                     placeholder = { Text("Enter your password") },
                     singleLine = true,
+                    enabled = !isLoading,
                     visualTransformation = if (passwordVisible) {
                         VisualTransformation.None
                     } else {
                         PasswordVisualTransformation()
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password
+                    ),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(
+                            onClick = {
+                                passwordVisible = !passwordVisible
+                            },
+                            enabled = !isLoading
+                        ) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                imageVector = if (passwordVisible) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = if (passwordVisible) {
+                                    "Hide password"
+                                } else {
+                                    "Show password"
+                                }
                             )
                         }
                     },
@@ -193,15 +293,22 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Remember me + Forgot password
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = rememberMe, onCheckedChange = { rememberMe = it })
-                        Text("Remember me", style = MaterialTheme.typography.bodyMedium)
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            enabled = !isLoading
+                        )
+
+                        Text(
+                            text = "Remember me",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
 
                     Text(
@@ -214,29 +321,58 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Login Button
                 Button(
                     onClick = {
-                        if (isLoginEmailValid) {
-                            val role = if (email.contains("admin", ignoreCase = true)) TolaUserRole.ADMIN else TolaUserRole.STUDENT
-                            onLoginSuccess(role)
+                        message = null
+
+                        scope.launch {
+                            isLoading = true
+
+                            try {
+                                val role = repository.login(
+                                    email = email.trim(),
+                                    password = password
+                                )
+
+                                messageIsError = false
+                                message = "Login successful."
+                                onLoginSuccess(role)
+                            } catch (error: Exception) {
+                                messageIsError = true
+                                message = authErrorMessage(error)
+                            } finally {
+                                isLoading = false
+                            }
                         }
                     },
-                    enabled = isLoginEmailValid,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    enabled = isLoginEmailValid &&
+                            password.isNotBlank() &&
+                            !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = TolaPrimary,
                         contentColor = Color.White
                     )
                 ) {
-                    Text("Login", fontWeight = FontWeight.Bold, color = Color.White)
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Login",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
             } else {
-                // Register UI
+                // Registration form
                 Text(
                     text = "Create your Tola account",
                     style = MaterialTheme.typography.titleLarge,
@@ -253,85 +389,125 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Full Name input (Required)
                 OutlinedTextField(
                     value = regFullName,
-                    onValueChange = { regFullName = it },
+                    onValueChange = {
+                        regFullName = it
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Full Name *") },
                     placeholder = { Text("Enter your full name") },
                     singleLine = true,
+                    enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Student ID input (Required)
                 OutlinedTextField(
                     value = regStudentId,
-                    onValueChange = { regStudentId = it },
+                    onValueChange = {
+                        regStudentId = it
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Student ID *") },
                     placeholder = { Text("e.g. STU-10293") },
                     singleLine = true,
+                    enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Register Email input (Required)
                 OutlinedTextField(
                     value = regEmail,
-                    onValueChange = { input -> regEmail = input.filter { !it.isWhitespace() } },
+                    onValueChange = {
+                        regEmail = it.filter { char -> !char.isWhitespace() }
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Email *") },
                     placeholder = { Text("Enter your email") },
                     singleLine = true,
+                    enabled = !isLoading,
                     isError = regEmail.isNotEmpty() && !isRegEmailValid,
                     supportingText = {
                         if (regEmail.isNotEmpty() && !isRegEmailValid) {
-                            Text("Please enter a valid email address (e.g. user@campus.edu)")
+                            Text("Enter a valid email address.")
                         }
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Phone Number input (Optional)
                 OutlinedTextField(
                     value = regPhoneNumber,
                     onValueChange = { regPhoneNumber = it },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Phone Number (optional)") },
-                    placeholder = { Text("e.g. +1 555-0199") },
+                    placeholder = { Text("Enter your phone number") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Register Password input (Required)
                 OutlinedTextField(
                     value = regPassword,
-                    onValueChange = { regPassword = it },
+                    onValueChange = {
+                        regPassword = it
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Password *") },
                     placeholder = { Text("Create a password") },
                     singleLine = true,
+                    enabled = !isLoading,
+                    isError = regPassword.isNotEmpty() &&
+                            regPassword.length < 6,
+                    supportingText = {
+                        if (regPassword.isNotEmpty() &&
+                            regPassword.length < 6
+                        ) {
+                            Text("Use at least 6 characters.")
+                        }
+                    },
                     visualTransformation = if (regPasswordVisible) {
                         VisualTransformation.None
                     } else {
                         PasswordVisualTransformation()
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password
+                    ),
                     trailingIcon = {
-                        IconButton(onClick = { regPasswordVisible = !regPasswordVisible }) {
+                        IconButton(
+                            onClick = {
+                                regPasswordVisible = !regPasswordVisible
+                            },
+                            enabled = !isLoading
+                        ) {
                             Icon(
-                                imageVector = if (regPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (regPasswordVisible) "Hide password" else "Show password"
+                                imageVector = if (regPasswordVisible) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = if (regPasswordVisible) {
+                                    "Hide password"
+                                } else {
+                                    "Show password"
+                                }
                             )
                         }
                     },
@@ -340,18 +516,27 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Confirm Password input (Required)
                 OutlinedTextField(
                     value = regConfirmPassword,
-                    onValueChange = { regConfirmPassword = it },
+                    onValueChange = {
+                        regConfirmPassword = it
+                        message = null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Confirm Password *") },
                     placeholder = { Text("Re-enter your password") },
                     singleLine = true,
-                    isError = regConfirmPassword.isNotEmpty() && !passwordsMatch,
+                    enabled = !isLoading,
+                    isError = regConfirmPassword.isNotEmpty() &&
+                            !passwordsMatch,
                     supportingText = {
-                        if (regConfirmPassword.isNotEmpty() && !passwordsMatch) {
-                            Text("Passwords do not match", color = MaterialTheme.colorScheme.error)
+                        if (regConfirmPassword.isNotEmpty() &&
+                            !passwordsMatch
+                        ) {
+                            Text(
+                                "Passwords do not match.",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
                     visualTransformation = if (regConfirmPasswordVisible) {
@@ -359,12 +544,29 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                     } else {
                         PasswordVisualTransformation()
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password
+                    ),
                     trailingIcon = {
-                        IconButton(onClick = { regConfirmPasswordVisible = !regConfirmPasswordVisible }) {
+                        IconButton(
+                            onClick = {
+                                regConfirmPasswordVisible =
+                                    !regConfirmPasswordVisible
+                            },
+                            enabled = !isLoading
+                        ) {
                             Icon(
-                                imageVector = if (regConfirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (regConfirmPasswordVisible) "Hide password" else "Show password"
+                                imageVector = if (regConfirmPasswordVisible) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription =
+                                    if (regConfirmPasswordVisible) {
+                                        "Hide password"
+                                    } else {
+                                        "Show password"
+                                    }
                             )
                         }
                     },
@@ -375,26 +577,76 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Button(
                     onClick = {
-                        if (isRegisterValid) {
-                            val role = if (regEmail.contains("admin", ignoreCase = true)) TolaUserRole.ADMIN else TolaUserRole.STUDENT
-                            onLoginSuccess(role)
+                        message = null
+
+                        scope.launch {
+                            isLoading = true
+
+                            try {
+                                val role = repository.register(
+                                    fullName = regFullName.trim(),
+                                    studentId = regStudentId.trim(),
+                                    email = regEmail.trim(),
+                                    phoneNumber = regPhoneNumber.trim(),
+                                    password = regPassword
+                                )
+
+                                messageIsError = false
+                                message = "Account created successfully."
+                                onLoginSuccess(role)
+                            } catch (error: Exception) {
+                                messageIsError = true
+                                message = authErrorMessage(error)
+                            } finally {
+                                isLoading = false
+                            }
                         }
                     },
-                    enabled = isRegisterValid,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    enabled = isRegisterValid && !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = TolaPrimary,
                         contentColor = Color.White
                     )
                 ) {
-                    Text("Create Account", fontWeight = FontWeight.Bold, color = Color.White)
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Create Account",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Firebase status and error messages
+            if (message != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = message.orEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    color = if (messageIsError) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text = "Tola • Campus Lost & Found",
