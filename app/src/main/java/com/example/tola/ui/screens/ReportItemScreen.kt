@@ -60,10 +60,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.CircularProgressIndicator
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaTheme
+import com.example.tola.data.ReportRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,6 +114,12 @@ fun ReportItemScreen(
     var categoryExpanded by remember {
         mutableStateOf(false)
     }
+
+    val reportRepository = remember { ReportRepository() }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    var isSubmitting by remember { mutableStateOf(false) }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
@@ -529,12 +541,57 @@ fun ReportItemScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            val isFormValid = itemName.isNotBlank() && location.isNotBlank()
+            val isFormValid = itemName.isNotBlank() &&
+                        category.isNotBlank() &&
+                        location.isNotBlank() &&
+                        date.isNotBlank()
 
             // Submit
+
             Button(
-                onClick = onNavigateBack,
-                enabled = isFormValid,
+                onClick = {
+                    if (!isFormValid || isSubmitting) return@Button
+
+                    coroutineScope.launch {
+                        isSubmitting = true
+
+                        try {
+                            reportRepository.submitReport(
+                                itemName = itemName,
+                                category = category,
+                                description = description,
+                                location = location,
+                                date = date,
+                                time = time,
+                                isLost = isLost
+                            )
+
+                            Toast.makeText(
+                                context,
+                                if (isLost) {
+                                    "Lost item reported successfully."
+                                } else {
+                                    "Found item reported successfully."
+                                },
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            onNavigateBack()
+                        } catch (exception: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Could not submit report: ${
+                                    exception.localizedMessage
+                                        ?: "Please try again."
+                                }",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                },
+                enabled = isFormValid && !isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -544,16 +601,25 @@ fun ReportItemScreen(
                     contentColor = Color.White
                 )
             ) {
-                Text(
-                    text = if (isLost) {
-                        "Report Lost Item"
-                    } else {
-                        "Report Found Item"
-                    },
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = if (isLost) {
+                            "Report Lost Item"
+                        } else {
+                            "Report Found Item"
+                        },
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
+
 
             Spacer(modifier = Modifier.height(10.dp))
 
