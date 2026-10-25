@@ -44,6 +44,9 @@ import com.example.tola.ui.screens.AdminNotificationsScreen
 import com.example.tola.ui.screens.AdminReportManagementScreen
 import com.example.tola.ui.screens.AdminUserManagementScreen
 import com.example.tola.ui.screens.AdminDashboardScreen
+import com.example.tola.ui.screens.StudentNotificationsScreen
+import com.example.tola.ui.screens.StudentNotification
+import com.example.tola.ui.screens.StudentNotificationType
 import com.example.tola.ui.TolaUserRole
 
 sealed class Screen(
@@ -144,6 +147,11 @@ sealed class Screen(
     object AdminNotifications : Screen(
         route = "admin_notifications",
         title = "Admin Notifications"
+    )
+
+    data object Notifications : Screen(
+        route = "notifications",
+        title = "Notifications"
     )
 
 }
@@ -308,6 +316,10 @@ fun TolaApp() {
 
                         onReportFound = {
                             navController.navigate(Screen.ReportItem.createRoute(isLost = false))
+                        },
+
+                        onNotificationClick = {
+                            navController.navigate(Screen.Notifications.route)
                         },
 
                         onProfileClick = {
@@ -538,7 +550,11 @@ fun TolaApp() {
 
             // Admin User Management
             composable(Screen.AdminUsers.route) {
-                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
                     AdminUserManagementScreen(
                         onBack = { navController.popBackStack() }
                     )
@@ -547,7 +563,11 @@ fun TolaApp() {
 
             // Admin Report Management
             composable(Screen.AdminReports.route) {
-                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
                     AdminReportManagementScreen(
                         onBack = { navController.popBackStack() }
                     )
@@ -556,7 +576,11 @@ fun TolaApp() {
 
             // Admin Claim Review
             composable(Screen.AdminClaims.route) {
-                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
                     AdminClaimReviewScreen(
                         onBack = { navController.popBackStack() }
                     )
@@ -565,7 +589,11 @@ fun TolaApp() {
 
             // Admin category management
             composable(Screen.AdminCategories.route) {
-                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
                     AdminCategoryManagementScreen(
                         onBack = { navController.popBackStack() }
                     )
@@ -574,9 +602,50 @@ fun TolaApp() {
 
             // Admin notifications management
             composable(Screen.AdminNotifications.route) {
-                RoleGate(currentRole, TolaUserRole.ADMIN, redirectToAllowedScreen) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.ADMIN,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
                     AdminNotificationsScreen(
                         onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // Student Notifications
+            composable(Screen.Notifications.route) {
+                RoleGate(
+                    currentRole = currentRole,
+                    requiredRole = TolaUserRole.STUDENT,
+                    onAccessDenied = redirectToAllowedScreen
+                ) {
+                    StudentNotificationsScreen(
+                        onBack = { navController.popBackStack() },
+                        notifications = listOf(
+                            StudentNotification(
+                                id = "1",
+                                title = "Claim update",
+                                message = "Your ownership claim for Cobalt Blue Hydro Flask is being reviewed.",
+                                timeLabel = "10 minutes ago",
+                                type = StudentNotificationType.CLAIM
+                            ),
+                            StudentNotification(
+                                id = "2",
+                                title = "Possible item match",
+                                message = "A found item report may match your lost North Face Recon Backpack.",
+                                timeLabel = "1 hour ago",
+                                type = StudentNotificationType.ITEM_MATCH,
+                                isRead = true
+                            ),
+                            StudentNotification(
+                                id = "3",
+                                title = "Item recovery confirmed",
+                                message = "Your item has been marked as recovered.",
+                                timeLabel = "Yesterday",
+                                type = StudentNotificationType.RECOVERY
+                            )
+                        )
                     )
                 }
             }

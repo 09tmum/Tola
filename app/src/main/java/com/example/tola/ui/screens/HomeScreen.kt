@@ -76,7 +76,8 @@ fun HomeScreen(
     onReportLost: () -> Unit = {},
     onReportFound: () -> Unit = {},
     onItemClick: (String) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All Posts") }
     var searchQuery by remember { mutableStateOf("") }
@@ -154,7 +155,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = {}
+                        onClick = onNotificationClick
                     ) {
                         Icon(imageVector = Icons.Default.NotificationsNone, contentDescription = "Notifications")
                     }

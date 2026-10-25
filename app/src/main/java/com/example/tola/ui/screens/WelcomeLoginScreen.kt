@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
@@ -65,22 +67,38 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
     var rememberMe by remember { mutableStateOf(false) }
 
     // Register state
+    var regFullName by remember { mutableStateOf("") }
+    var regStudentId by remember { mutableStateOf("") }
     var regEmail by remember { mutableStateOf("") }
+    var regPhoneNumber by remember { mutableStateOf("") }
     var regPassword by remember { mutableStateOf("") }
+    var regConfirmPassword by remember { mutableStateOf("") }
     var regPasswordVisible by remember { mutableStateOf(false) }
+    var regConfirmPasswordVisible by remember { mutableStateOf(false) }
 
     val isLoginEmailValid = isValidEmail(email)
     val isRegEmailValid = isValidEmail(regEmail)
+    val passwordsMatch = regPassword == regConfirmPassword
+
+    val isRegisterValid = regFullName.trim().isNotBlank() &&
+            regStudentId.trim().isNotBlank() &&
+            isRegEmailValid &&
+            regPassword.isNotBlank() &&
+            regConfirmPassword.isNotBlank() &&
+            passwordsMatch
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             // Tola Logo
             Box(
@@ -105,7 +123,7 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             // Login / Register Tabs
             TabRow(
@@ -233,14 +251,40 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Register Email input
+                // Full Name input (Required)
+                OutlinedTextField(
+                    value = regFullName,
+                    onValueChange = { regFullName = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Full Name *") },
+                    placeholder = { Text("Enter your full name") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Student ID input (Required)
+                OutlinedTextField(
+                    value = regStudentId,
+                    onValueChange = { regStudentId = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Student ID *") },
+                    placeholder = { Text("e.g. STU-10293") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Register Email input (Required)
                 OutlinedTextField(
                     value = regEmail,
                     onValueChange = { input -> regEmail = input.filter { !it.isWhitespace() } },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Email") },
+                    label = { Text("Email *") },
                     placeholder = { Text("Enter your email") },
                     singleLine = true,
                     isError = regEmail.isNotEmpty() && !isRegEmailValid,
@@ -255,12 +299,26 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Register Password input
+                // Phone Number input (Optional)
+                OutlinedTextField(
+                    value = regPhoneNumber,
+                    onValueChange = { regPhoneNumber = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Phone Number (optional)") },
+                    placeholder = { Text("e.g. +1 555-0199") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Register Password input (Required)
                 OutlinedTextField(
                     value = regPassword,
                     onValueChange = { regPassword = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password") },
+                    label = { Text("Password *") },
                     placeholder = { Text("Create a password") },
                     singleLine = true,
                     visualTransformation = if (regPasswordVisible) {
@@ -280,16 +338,49 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                     shape = RoundedCornerShape(12.dp)
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Confirm Password input (Required)
+                OutlinedTextField(
+                    value = regConfirmPassword,
+                    onValueChange = { regConfirmPassword = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Confirm Password *") },
+                    placeholder = { Text("Re-enter your password") },
+                    singleLine = true,
+                    isError = regConfirmPassword.isNotEmpty() && !passwordsMatch,
+                    supportingText = {
+                        if (regConfirmPassword.isNotEmpty() && !passwordsMatch) {
+                            Text("Passwords do not match", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    visualTransformation = if (regConfirmPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        IconButton(onClick = { regConfirmPasswordVisible = !regConfirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (regConfirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (regConfirmPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                )
+
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
                     onClick = {
-                        if (isRegEmailValid) {
+                        if (isRegisterValid) {
                             val role = if (regEmail.contains("admin", ignoreCase = true)) TolaUserRole.ADMIN else TolaUserRole.STUDENT
                             onLoginSuccess(role)
                         }
                     },
-                    enabled = isRegEmailValid && regPassword.isNotBlank(),
+                    enabled = isRegisterValid,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -299,9 +390,11 @@ fun WelcomeLoginScreen(onLoginSuccess: (TolaUserRole) -> Unit) {
                 ) {
                     Text("Create Account", fontWeight = FontWeight.Bold, color = Color.White)
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "Tola • Campus Lost & Found",
