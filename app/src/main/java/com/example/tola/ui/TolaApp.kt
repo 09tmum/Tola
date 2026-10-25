@@ -187,9 +187,10 @@ fun TolaApp() {
         }
 
         navController.navigate(destination) {
-            popUpTo(navController.graph.id) {
+            popUpTo(Screen.WelcomeLogin.route) {
                 inclusive = true
             }
+
             launchSingleTop = true
         }
     }
