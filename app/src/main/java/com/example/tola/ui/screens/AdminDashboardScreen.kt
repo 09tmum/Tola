@@ -28,6 +28,7 @@ fun AdminDashboardScreen(
     foundReports: Int = 0,
     pendingClaims: Int = 0,
     recoveredItems: Int = 0,
+    dashboardError: String? = null,
     onUsersClick: () -> Unit = {},
     onReportsClick: () -> Unit = {},
     onClaimsClick: () -> Unit = {},
@@ -40,6 +41,13 @@ fun AdminDashboardScreen(
         subtitle = "Welcome, $adminName. Here's the current overview.",
     ) {
         Text("Overview", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
+        if (dashboardError != null) {
+            Text(
+                text = dashboardError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AdminStatCard("Total users", totalUsers, Modifier.weight(1f))
             AdminStatCard("Lost reports", lostReports, Modifier.weight(1f))
