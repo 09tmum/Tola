@@ -3,17 +3,23 @@ package com.example.tola.auth
 import com.example.tola.ui.TolaUserRole
 import com.example.tola.ui.parseTolaUserRole
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val authProvider: () -> FirebaseAuth? = {
+        try { FirebaseAuth.getInstance() } catch (_: Exception) { null }
+    },
+    private val firestoreProvider: () -> FirebaseFirestore? = {
+        try { FirebaseFirestore.getInstance() } catch (_: Exception) { null }
+    }
 ) {
+    private val auth: FirebaseAuth?
+        get() = authProvider()
+
+    private val firestore: FirebaseFirestore?
+        get() = firestoreProvider()
 
     suspend fun register(
         fullName: String,
@@ -22,6 +28,11 @@ class FirebaseAuthRepository(
         phoneNumber: String,
         password: String
     ): TolaUserRole {
+        val currentAuth = auth
+            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
         val cleanName = fullName.trim()
         val cleanStudentId = studentId.trim()
         val cleanEmail = email.trim()
@@ -33,7 +44,7 @@ class FirebaseAuthRepository(
             "Your password must contain at least 6 characters."
         }
 
-        val authResult = auth.createUserWithEmailAndPassword(
+        val authResult = currentAuth.createUserWithEmailAndPassword(
             cleanEmail,
             password
         ).await()
@@ -52,17 +63,15 @@ class FirebaseAuthRepository(
         )
 
         try {
-            firestore.collection("users")
+            currentFirestore.collection("users")
                 .document(user.uid)
                 .set(profile)
                 .await()
         } catch (error: Exception) {
-            // Avoid leaving an authenticated account without its profile.
-            auth.signOut()
+            currentAuth.signOut()
             try {
                 user.delete().await()
             } catch (_: Exception) {
-                // If cleanup fails, report the original Firestore error.
             }
             throw error
         }
@@ -74,22 +83,27 @@ class FirebaseAuthRepository(
         email: String,
         password: String
     ): TolaUserRole {
+        val currentAuth = auth
+            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
         require(email.isNotBlank()) { "Enter your email address." }
         require(password.isNotBlank()) { "Enter your password." }
 
-        auth.signInWithEmailAndPassword(email.trim(), password).await()
+        currentAuth.signInWithEmailAndPassword(email.trim(), password).await()
 
-        val user = auth.currentUser
+        val user = currentAuth.currentUser
             ?: throw IllegalStateException("Login failed. Please try again.")
 
         try {
-            val snapshot = firestore.collection("users")
+            val snapshot = currentFirestore.collection("users")
                 .document(user.uid)
                 .get()
                 .await()
 
             if (!snapshot.exists()) {
-                auth.signOut()
+                currentAuth.signOut()
                 throw IllegalStateException(
                     "Your user profile was not found. Please contact support."
                 )
@@ -97,7 +111,7 @@ class FirebaseAuthRepository(
 
             val status = snapshot.getString("accountStatus") ?: "ACTIVE"
             if (status != "ACTIVE") {
-                auth.signOut()
+                currentAuth.signOut()
                 throw IllegalStateException(
                     "This account is not active. Please contact support."
                 )
@@ -105,7 +119,7 @@ class FirebaseAuthRepository(
 
             val role = parseTolaUserRole(snapshot.getString("role"))
                 ?: run {
-                    auth.signOut()
+                    currentAuth.signOut()
                     throw IllegalStateException(
                         "Your account role is invalid. Please contact support."
                     )
@@ -113,14 +127,49 @@ class FirebaseAuthRepository(
 
             return role
         } catch (error: Exception) {
-            if (auth.currentUser != null) {
-                auth.signOut()
+            if (currentAuth.currentUser != null) {
+                currentAuth.signOut()
             }
             throw error
         }
     }
 
     fun logout() {
-        auth.signOut()
+        auth?.signOut()
+    }
+
+    suspend fun getCurrentUserProfile(): UserProfile? {
+        val currentAuth = auth ?: return null
+        val currentFirestore = firestore ?: return null
+        val user = currentAuth.currentUser ?: return null
+        return try {
+            val snapshot = currentFirestore.collection("users")
+                .document(user.uid)
+                .get()
+                .await()
+
+            if (!snapshot.exists()) {
+                UserProfile(
+                    uid = user.uid,
+                    fullName = user.displayName.orEmpty().ifBlank { "Campus Student" },
+                    email = user.email.orEmpty()
+                )
+            } else {
+                UserProfile(
+                    uid = user.uid,
+                    fullName = snapshot.getString("fullName").orEmpty().ifBlank { "Campus Student" },
+                    studentId = snapshot.getString("studentId").orEmpty(),
+                    email = snapshot.getString("email") ?: user.email.orEmpty(),
+                    phoneNumber = snapshot.getString("phoneNumber").orEmpty(),
+                    role = snapshot.getString("role") ?: "STUDENT"
+                )
+            }
+        } catch (_: Exception) {
+            UserProfile(
+                uid = user.uid,
+                fullName = user.displayName.orEmpty().ifBlank { "Campus Student" },
+                email = user.email.orEmpty()
+            )
+        }
     }
 }

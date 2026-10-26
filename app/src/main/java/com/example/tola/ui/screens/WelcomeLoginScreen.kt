@@ -583,7 +583,7 @@ fun WelcomeLoginScreen(
                             isLoading = true
 
                             try {
-                                val role = repository.register(
+                                repository.register(
                                     fullName = regFullName.trim(),
                                     studentId = regStudentId.trim(),
                                     email = regEmail.trim(),
@@ -591,9 +591,14 @@ fun WelcomeLoginScreen(
                                     password = regPassword
                                 )
 
+                                repository.logout()
+
+                                email = regEmail.trim()
+                                password = ""
+                                selectedTab = 0
+
                                 messageIsError = false
-                                message = "Account created successfully."
-                                onLoginSuccess(role)
+                                message = "Account created successfully! Please log in with your credentials."
                             } catch (error: Exception) {
                                 messageIsError = true
                                 message = authErrorMessage(error)

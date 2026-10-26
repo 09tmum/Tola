@@ -23,7 +23,8 @@ data class AdminClaim(
     val itemName: String,
     val claimantName: String,
     val submittedDate: String,
-    val status: String = "Pending"
+    val status: String = "Pending",
+    val proofDescription: String = ""
 )
 
 data class AdminCategory(

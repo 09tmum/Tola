@@ -13,6 +13,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.example.tola.ui.theme.TolaError
 import com.example.tola.ui.theme.TolaLostBackground
 import com.example.tola.ui.theme.TolaLostText
@@ -25,12 +31,20 @@ import com.example.tola.ui.theme.TolaTheme
 
 @Composable
 fun AdminClaimReviewScreen(
+
     claims: List<AdminClaim> = emptyList(),
     onBack: () -> Unit = {},
     onViewClaim: (AdminClaim) -> Unit = {},
     onApproveClaim: (AdminClaim) -> Unit = {},
     onRejectClaim: (AdminClaim) -> Unit = {}
 ) {
+    var selectedClaim by remember {
+        mutableStateOf<AdminClaim?>(null)
+    }
+
+    var actionMessage by remember {
+        mutableStateOf<String?>(null)
+    }
     AdminScreenLayout("Claim Review", "Review ownership claims before recording a decision.", onBack) {
         Text("${claims.count { it.status.equals("Pending", true) }} pending claim(s)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = TolaTextSecondary)
         if (claims.isEmpty()) {
@@ -47,13 +61,25 @@ fun AdminClaimReviewScreen(
                         background = if (claim.status.equals("Pending", true)) TolaLostBackground else TolaPrimaryContainer,
                         foreground = if (claim.status.equals("Pending", true)) TolaLostText else TolaPrimary
                     )
-                    OutlinedButton(onClick = { onViewClaim(claim) }, shape = RoundedCornerShape(10.dp)) {
-                        Text("View claim and evidence", color = TolaPrimary, fontWeight = FontWeight.SemiBold)
+                    OutlinedButton(
+                        onClick = {
+                            selectedClaim = claim
+                            onViewClaim(claim)
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            "View claim and evidence",
+                            color = TolaPrimary,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     if (claim.status.equals("Pending", true)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
-                                onClick = { onApproveClaim(claim) },
+                                onClick = {
+                                    onApproveClaim(claim)
+                                },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = TolaPrimary,
@@ -61,7 +87,9 @@ fun AdminClaimReviewScreen(
                                 )
                             ) { Text("Approve", fontWeight = FontWeight.Bold, color = Color.White) }
                             OutlinedButton(
-                                onClick = { onRejectClaim(claim) },
+                                onClick = {
+                                    onRejectClaim(claim)
+                                },
                                 shape = RoundedCornerShape(10.dp)
                             ) { Text("Reject", color = TolaError, fontWeight = FontWeight.SemiBold) }
                         }
@@ -73,6 +101,71 @@ fun AdminClaimReviewScreen(
             "Only approve a claim after checking sufficient ownership evidence. A submitted claim is not proof of ownership.",
             style = MaterialTheme.typography.bodySmall,
             color = TolaTextMuted
+        )
+    }
+    selectedClaim?.let { claim ->
+        AlertDialog(
+            onDismissRequest = {
+                selectedClaim = null
+            },
+            title = {
+                Text("Claim details")
+            },
+            text = {
+                androidx.compose.foundation.layout.Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Item: ${claim.itemName}")
+                    Text("Claim ID: ${claim.id}")
+                    Text("Claimant: ${claim.claimantName}")
+                    Text("Submitted: ${claim.submittedDate}")
+                    Text("Status: ${claim.status}")
+
+                    Text(
+                        "Ownership evidence",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        claim.proofDescription.ifBlank {
+                            "No ownership evidence was provided."
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedClaim = null
+                    }
+                ) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    actionMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = {
+                actionMessage = null
+            },
+            title = {
+                Text("Claim review")
+            },
+            text = {
+                Text(message)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        actionMessage = null
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
         )
     }
 }

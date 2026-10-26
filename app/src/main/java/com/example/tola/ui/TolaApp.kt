@@ -29,6 +29,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateListOf
+import kotlinx.coroutines.launch
+import com.example.tola.data.ClaimRepository
+import com.example.tola.ui.screens.AdminClaim
 import com.example.tola.ui.screens.ClaimOwnershipScreen
 import com.example.tola.ui.screens.FoundItemReportScreen
 import com.example.tola.ui.screens.HomeScreen
@@ -281,7 +287,7 @@ fun TolaApp() {
                                 Screen.AdminDashboard.route
                         }
 
-                        navController.navigate(Screen.Home.route) {
+                        navController.navigate(destination) {
 
                             popUpTo(Screen.WelcomeLogin.route) {
                                 inclusive = true
@@ -376,6 +382,12 @@ fun TolaApp() {
                                     inclusive = true
                                 }
                             }
+                        },
+                        onNotificationsClick = {
+                            navController.navigate(Screen.Notifications.route)
+                        },
+                        onItemClick = { itemId ->
+                            navController.navigate(Screen.ItemDetails.createRoute(itemId))
                         },
                         onLogout = {
 
@@ -582,8 +594,85 @@ fun TolaApp() {
                     requiredRole = TolaUserRole.ADMIN,
                     onAccessDenied = redirectToAllowedScreen
                 ) {
+                    var adminClaims by remember {
+                        mutableStateOf<List<AdminClaim>>(emptyList())
+                    }
+
+                    var reviewError by remember {
+                        mutableStateOf<String?>(null)
+                    }
+
+                    val claimRepository = remember {
+                        ClaimRepository()
+                    }
+
+                    val coroutineScope = rememberCoroutineScope()
+
+                    LaunchedEffect(currentRole) {
+                        try {
+                            adminClaims =
+                                claimRepository.getPendingAdminClaims()
+                        } catch (e: Exception) {
+                            android.util.Log.e(
+                                "AdminClaimReview",
+                                "Failed to load claims",
+                                e
+                            )
+                            reviewError = "Unable to load claims. Please try again."
+                        }
+                    }
+
                     AdminClaimReviewScreen(
-                        onBack = { navController.popBackStack() }
+                        claims = adminClaims,
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        onApproveClaim = { claim ->
+                            coroutineScope.launch {
+                                try {
+                                    claimRepository.decideClaim(
+                                        claimId = claim.id,
+                                        approve = true
+                                    )
+
+                                    adminClaims =
+                                        claimRepository.getPendingAdminClaims()
+
+                                    reviewError = null
+                                } catch (e: Exception) {
+                                    android.util.Log.e(
+                                        "AdminClaimReview",
+                                        "Failed to approve claim",
+                                        e
+                                    )
+                                    reviewError =
+                                        e.message ?: "Unable to approve this claim."
+                                }
+                            }
+                        },
+                        onRejectClaim = { claim ->
+                            coroutineScope.launch {
+                                try {
+                                    claimRepository.decideClaim(
+                                        claimId = claim.id,
+                                        approve = false
+                                    )
+
+                                    adminClaims =
+                                        claimRepository.getPendingAdminClaims()
+
+                                    reviewError = null
+                                } catch (e: Exception) {
+                                    android.util.Log.e(
+                                        "AdminClaimReview",
+                                        "Failed to reject claim",
+                                        e
+                                    )
+                                    reviewError =
+                                        e.message ?: "Unable to reject this claim."
+                                }
+                            }
+                        }
                     )
                 }
             }

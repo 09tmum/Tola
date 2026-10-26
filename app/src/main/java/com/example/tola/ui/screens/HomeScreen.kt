@@ -26,6 +26,12 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +57,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.example.tola.ui.theme.TolaFoundBackground
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostBackground
@@ -58,6 +71,10 @@ import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
 import com.example.tola.ui.theme.TolaTheme
+import com.example.tola.data.ReportRepository
+import com.example.tola.data.LostFoundReport
+import com.example.tola.auth.FirebaseAuthRepository
+import com.example.tola.auth.UserProfile
 
 data class LostFoundFeedItem(
     val id: String,
@@ -82,36 +99,87 @@ fun HomeScreen(
     var selectedFilter by remember { mutableStateOf("All Posts") }
     var searchQuery by remember { mutableStateOf("") }
 
-    val items = remember {
-        listOf(
-            LostFoundFeedItem(
-                id = "LF-1",
-                title = "Cobalt Blue Hydro Flask",
-                description = "Blue water bottle with a black lid.",
-                location = "Main Library",
-                timeAgo = "15 min ago",
-                isFound = true,
-                tagNumber = "LF-1024"
-            ),
-            LostFoundFeedItem(
-                id = "LF-2",
-                title = "North Face Recon Backpack",
-                description = "Black backpack with a small red keychain.",
-                location = "Computer Lab",
-                timeAgo = "1 hour ago",
-                isFound = false,
-                tagNumber = "LF-1023"
-            ),
-            LostFoundFeedItem(
-                id = "LF-3",
-                title = "AirPods Pro with Red Case",
-                description = "White AirPods in a red protective case.",
-                location = "Student Centre",
-                timeAgo = "2 hours ago",
-                isFound = true,
-                tagNumber = "LF-1022"
+    var items by remember {
+        mutableStateOf<List<LostFoundFeedItem>>(emptyList())
+    }
+
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var userProfile by remember { mutableStateOf<UserProfile?>(null) }
+
+    val isPreview = LocalInspectionMode.current
+
+    val reportRepository = if (isPreview) null else remember { ReportRepository() }
+    val authRepository = if (isPreview) null else remember { FirebaseAuthRepository() }
+    val context = LocalContext.current
+
+    LaunchedEffect(isPreview) {
+        if (isPreview) {
+            userProfile = UserProfile(fullName = "Alex Chen", email = "alex.chen@campus.edu")
+            items = listOf(
+                LostFoundFeedItem(
+                    id = "LF-1",
+                    title = "Cobalt Blue Hydro Flask",
+                    description = "Blue water bottle with a black lid.",
+                    location = "Main Library",
+                    timeAgo = "15 min ago",
+                    isFound = true,
+                    tagNumber = "LF-1024"
+                ),
+                LostFoundFeedItem(
+                    id = "LF-2",
+                    title = "North Face Recon Backpack",
+                    description = "Black backpack with a small red keychain.",
+                    location = "Computer Lab",
+                    timeAgo = "1 hour ago",
+                    isFound = false,
+                    tagNumber = "LF-1023"
+                ),
+                LostFoundFeedItem(
+                    id = "LF-3",
+                    title = "AirPods Pro with Red Case",
+                    description = "White AirPods in a red protective case.",
+                    location = "Student Centre",
+                    timeAgo = "2 hours ago",
+                    isFound = true,
+                    tagNumber = "LF-1022"
+                )
             )
-        )
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        userProfile = authRepository?.getCurrentUserProfile()
+        try {
+            val reports: List<LostFoundReport> =
+                reportRepository?.getReports().orEmpty()
+
+            items = reports.map { report ->
+                LostFoundFeedItem(
+                    id = report.id,
+                    title = report.itemName,
+                    description = report.description,
+                    location = report.location,
+                    timeAgo = listOf(report.date, report.time)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    isFound = report.type == "FOUND",
+                    tagNumber = report.id.takeLast(6)
+                )
+            }
+
+            loadError = null
+        } catch (e: Exception) {
+            loadError = e.localizedMessage
+                ?: "Unable to load reports."
+            Toast.makeText(
+                context,
+                loadError,
+                Toast.LENGTH_LONG
+            ).show()
+        } finally {
+            isLoading = false
+        }
     }
 
     val filteredItems = items.filter { item ->
@@ -171,7 +239,7 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "FP",
+                            text = userProfile?.initials ?: "U",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
@@ -184,7 +252,11 @@ fun HomeScreen(
         // Greeting
         item {
             Column {
-                Text(text = "Hey Flashback 👋", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Hey ${userProfile?.firstName ?: "there"} 👋",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -310,6 +382,34 @@ fun HomeScreen(
                         }
                     )
                 }
+            }
+        }
+
+        if (isLoading) {
+            item {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (loadError == null && filteredItems.isEmpty()) {
+            item {
+                Text(
+                    text = if (items.isEmpty()) {
+                        "No reports yet. Be the first to report a lost or found item!"
+                    } else {
+                        "No reports match your search or filter."
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
