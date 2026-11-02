@@ -191,4 +191,29 @@ class ReportRepository(
             status = document.getString("status") ?: "OPEN"
         )
     }
+
+    suspend fun markReportRecovered(reportId: String) {
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
+        currentFirestore.collection("reports")
+            .document(reportId)
+            .update(
+                mapOf(
+                    "status" to "RECOVERED",
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
+    }
+
+    suspend fun deleteReport(reportId: String) {
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
+        currentFirestore.collection("reports")
+            .document(reportId)
+            .delete()
+            .await()
+    }
 }

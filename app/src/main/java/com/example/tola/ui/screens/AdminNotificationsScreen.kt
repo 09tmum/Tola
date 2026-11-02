@@ -7,9 +7,16 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.data.AdminRepository
 import com.example.tola.ui.theme.*
 
 @Composable
@@ -19,11 +26,24 @@ fun AdminNotificationsScreen(
     onOpenNotification: (AdminNotification) -> Unit = {},
     onMarkRead: (AdminNotification) -> Unit = {}
 ) {
+    var notificationList by remember { mutableStateOf(notifications) }
+
+    val isPreview = LocalInspectionMode.current
+    val adminRepository = if (isPreview) null else remember { AdminRepository() }
+
+    LaunchedEffect(isPreview) {
+        if (isPreview) return@LaunchedEffect
+        val fetchedNotifications = adminRepository?.getNotifications().orEmpty()
+        if (fetchedNotifications.isNotEmpty()) {
+            notificationList = fetchedNotifications
+        }
+    }
+
     AdminScreenLayout("Notifications", "Review important activity and system updates.", onBack) {
-        if (notifications.isEmpty()) {
+        if (notificationList.isEmpty()) {
             AdminEmptyState("There are no notifications to display.")
         } else {
-            notifications.forEach { notification ->
+            notificationList.forEach { notification ->
                 AdminPanelCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(notification.title, style = MaterialTheme.typography.titleMedium, color = TolaTextPrimary, modifier = Modifier.weight(1f))

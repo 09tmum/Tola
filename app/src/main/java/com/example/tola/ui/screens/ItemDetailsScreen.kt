@@ -44,7 +44,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.rememberCoroutineScope
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.tola.ui.theme.TolaBorder
+import com.example.tola.ui.theme.TolaError
+import com.example.tola.ui.theme.TolaSurfaceSubtle
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,6 +89,11 @@ fun ItemDetailsScreen(
     var errorMessage by remember {
         mutableStateOf<String?>(null)
     }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val currentUserUid = try { FirebaseAuth.getInstance().currentUser?.uid } catch (_: Exception) { null }
+    val isOwner = currentUserUid != null && report?.ownerUid == currentUserUid
 
     LaunchedEffect(itemId) {
         isLoading = true
@@ -386,6 +401,69 @@ fun ItemDetailsScreen(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    if (isOwner) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = TolaSurfaceSubtle),
+                            border = BorderStroke(1.dp, TolaBorder),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = "Your Report Actions",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TolaPrimary
+                                )
+
+                                if (item.status != "RECOVERED" && item.status != "RESOLVED") {
+                                    Button(
+                                        onClick = {
+                                            scope.launch {
+                                                try {
+                                                    repository.markReportRecovered(item.id)
+                                                    Toast.makeText(context, "Item marked as recovered!", Toast.LENGTH_SHORT).show()
+                                                    onBack()
+                                                } catch (e: Exception) {
+                                                    Toast.makeText(context, e.localizedMessage ?: "Failed to update report", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
+                                    ) {
+                                        Text("Mark as Recovered", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                repository.deleteReport(item.id)
+                                                Toast.makeText(context, "Report deleted successfully", Toast.LENGTH_SHORT).show()
+                                                onBack()
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, e.localizedMessage ?: "Failed to delete report", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(1.dp, TolaError)
+                                ) {
+                                    Text("Remove Report", color = TolaError, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
 
                     // Safety notice
                     Card(

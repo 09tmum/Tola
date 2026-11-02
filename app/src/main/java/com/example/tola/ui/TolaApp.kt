@@ -33,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateListOf
 import kotlinx.coroutines.launch
+import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.data.ClaimRepository
 import com.example.tola.ui.screens.AdminClaim
 import com.example.tola.ui.screens.ClaimOwnershipScreen
@@ -50,6 +51,7 @@ import com.example.tola.ui.screens.AdminNotificationsScreen
 import com.example.tola.ui.screens.AdminReportManagementScreen
 import com.example.tola.ui.screens.AdminUserManagementScreen
 import com.example.tola.ui.screens.AdminDashboardScreen
+import com.example.tola.ui.screens.AdminDashboardRoute
 import com.example.tola.ui.screens.StudentNotificationsScreen
 import com.example.tola.ui.screens.StudentNotification
 import com.example.tola.ui.screens.StudentNotificationType
@@ -182,6 +184,8 @@ fun TolaApp() {
     var currentRole by rememberSaveable {
         mutableStateOf<TolaUserRole?>(null)
     }
+
+    val authRepository = remember { FirebaseAuthRepository() }
 
     val redirectToAllowedScreen: () -> Unit = {
         val destination = when (currentRole) {
@@ -534,7 +538,7 @@ fun TolaApp() {
                     requiredRole = TolaUserRole.ADMIN,
                     onAccessDenied = redirectToAllowedScreen
                 ) {
-                    AdminDashboardScreen(
+                    AdminDashboardRoute(
                         onUsersClick = {
                             navController.navigate(Screen.AdminUsers.route)
                         },
@@ -551,6 +555,7 @@ fun TolaApp() {
                             navController.navigate(Screen.AdminNotifications.route)
                         },
                         onLogoutClick = {
+                            authRepository.logout()
                             currentRole = null
                             navController.navigate(Screen.WelcomeLogin.route) {
                                 popUpTo(navController.graph.id)

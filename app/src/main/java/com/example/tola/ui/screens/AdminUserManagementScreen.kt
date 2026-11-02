@@ -1,5 +1,6 @@
 package com.example.tola.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,15 +13,21 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.tola.data.AdminRepository
 import com.example.tola.ui.theme.TolaBorderStrong
 import com.example.tola.ui.theme.TolaFoundBackground
 import com.example.tola.ui.theme.TolaFoundText
@@ -30,16 +37,38 @@ import com.example.tola.ui.theme.TolaTextMuted
 import com.example.tola.ui.theme.TolaTextPrimary
 import com.example.tola.ui.theme.TolaTextSecondary
 import com.example.tola.ui.theme.TolaTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun AdminUserManagementScreen(
     users: List<AdminUser> = emptyList(),
     onBack: () -> Unit = {},
-    onViewUser: (AdminUser) -> Unit = {},
-    onToggleUserStatus: (AdminUser) -> Unit = {}
+    onViewUser: (AdminUser) -> Unit = {}
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleUsers = users.filter {
+    var userList by remember { mutableStateOf(users) }
+
+    val isPreview = LocalInspectionMode.current
+    val adminRepository = if (isPreview) null else remember { AdminRepository() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val refreshUsers = {
+        if (!isPreview && adminRepository != null) {
+            scope.launch {
+                try {
+                    userList = adminRepository.getUsers()
+                } catch (_: Exception) { }
+            }
+        }
+    }
+
+    LaunchedEffect(isPreview) {
+        if (isPreview) return@LaunchedEffect
+        refreshUsers()
+    }
+
+    val visibleUsers = userList.filter {
         it.name.contains(query, ignoreCase = true) ||
             it.email.contains(query, ignoreCase = true) ||
             it.id.contains(query, ignoreCase = true)
@@ -63,7 +92,7 @@ fun AdminUserManagementScreen(
         )
         Text("${visibleUsers.size} user(s)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = TolaTextSecondary)
         if (visibleUsers.isEmpty()) {
-            AdminEmptyState(if (users.isEmpty()) "No user records are connected yet." else "No users match your search.")
+            AdminEmptyState(if (userList.isEmpty()) "No user records are connected yet." else "No users match your search.")
         } else {
             visibleUsers.forEach { user ->
                 AdminPanelCard {
@@ -81,7 +110,18 @@ fun AdminUserManagementScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) { Text("View details", color = TolaPrimary, fontWeight = FontWeight.SemiBold) }
                         Button(
-                            onClick = { onToggleUserStatus(user) },
+                            onClick = {
+                                if (isPreview) return@Button
+                                scope.launch {
+                                    try {
+                                        adminRepository?.toggleUserStatus(user.id, user.isActive)
+                                        Toast.makeText(context, "User status updated", Toast.LENGTH_SHORT).show()
+                                        refreshUsers()
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, e.localizedMessage ?: "Failed to update status", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            },
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = TolaPrimary,

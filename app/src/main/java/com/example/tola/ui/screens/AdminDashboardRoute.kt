@@ -1,19 +1,20 @@
-
 package com.example.tola.ui.screens
 
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalInspectionMode
+import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.data.AdminDashboardRepository
 import com.example.tola.data.AdminDashboardStats
 
 @Composable
 fun AdminDashboardRoute(
-    adminName: String = "Administrator",
     onUsersClick: () -> Unit = {},
     onReportsClick: () -> Unit = {},
     onClaimsClick: () -> Unit = {},
@@ -25,26 +26,46 @@ fun AdminDashboardRoute(
         mutableStateOf(AdminDashboardStats())
     }
 
+    var adminName by remember {
+        mutableStateOf("Administrator")
+    }
+
     var dashboardError by remember {
         mutableStateOf<String?>(null)
     }
 
-    DisposableEffect(Unit) {
-        val repository = AdminDashboardRepository()
+    val isPreview = LocalInspectionMode.current
 
-        val listeners = repository.listenToStats(
-            onStatsChanged = { newStats ->
-                stats = newStats
-                dashboardError = null
-            },
-            onError = { message ->
-                dashboardError = message
-                Log.e("AdminDashboard", message)
+    LaunchedEffect(isPreview) {
+        if (!isPreview) {
+            val authRepo = FirebaseAuthRepository()
+            val profile = authRepo.getCurrentUserProfile()
+            if (profile != null && profile.fullName.isNotBlank()) {
+                adminName = profile.fullName
             }
-        )
+        }
+    }
 
-        onDispose {
-            listeners.forEach { it.remove() }
+    DisposableEffect(isPreview) {
+        if (isPreview) {
+            onDispose { }
+        } else {
+            val repository = AdminDashboardRepository()
+
+            val listeners = repository.listenToStats(
+                onStatsChanged = { newStats ->
+                    stats = newStats
+                    dashboardError = null
+                },
+                onError = { message ->
+                    dashboardError = message
+                    Log.e("AdminDashboard", message)
+                }
+            )
+
+            onDispose {
+                listeners.forEach { it.remove() }
+            }
         }
     }
 
@@ -53,6 +74,8 @@ fun AdminDashboardRoute(
         totalUsers = stats.totalUsers,
         lostReports = stats.lostReports,
         foundReports = stats.foundReports,
+        pendingClaims = stats.pendingClaims,
+        recoveredItems = stats.recoveredItems,
         dashboardError = dashboardError,
         onUsersClick = onUsersClick,
         onReportsClick = onReportsClick,
