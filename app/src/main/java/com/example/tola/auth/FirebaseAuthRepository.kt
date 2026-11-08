@@ -28,11 +28,6 @@ class FirebaseAuthRepository(
         phoneNumber: String,
         password: String
     ): TolaUserRole {
-        val currentAuth = auth
-            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
-        val currentFirestore = firestore
-            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
-
         val cleanName = fullName.trim()
         val cleanStudentId = studentId.trim()
         val cleanEmail = email.trim()
@@ -43,6 +38,11 @@ class FirebaseAuthRepository(
         require(password.length >= 6) {
             "Your password must contain at least 6 characters."
         }
+
+        val currentAuth = auth
+            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
 
         val authResult = currentAuth.createUserWithEmailAndPassword(
             cleanEmail,
@@ -83,13 +83,13 @@ class FirebaseAuthRepository(
         email: String,
         password: String
     ): TolaUserRole {
+        require(email.isNotBlank()) { "Enter your email address." }
+        require(password.isNotBlank()) { "Enter your password." }
+
         val currentAuth = auth
             ?: throw IllegalStateException("Firebase Authentication is not initialized.")
         val currentFirestore = firestore
             ?: throw IllegalStateException("Firebase Firestore is not initialized.")
-
-        require(email.isNotBlank()) { "Enter your email address." }
-        require(password.isNotBlank()) { "Enter your password." }
 
         currentAuth.signInWithEmailAndPassword(email.trim(), password).await()
 

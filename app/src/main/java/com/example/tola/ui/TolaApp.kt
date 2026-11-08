@@ -780,7 +780,7 @@ fun TolaApp() {
 }
 
 @Composable
-private fun RoleGate(
+internal fun RoleGate(
     currentRole: TolaUserRole?,
     requiredRole: TolaUserRole,
     onAccessDenied: () -> Unit,

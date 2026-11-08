@@ -76,6 +76,7 @@ fun AdminDashboardRoute(
         foundReports = stats.foundReports,
         pendingClaims = stats.pendingClaims,
         recoveredItems = stats.recoveredItems,
+        totalReports = stats.totalReports,
         dashboardError = dashboardError,
         onUsersClick = onUsersClick,
         onReportsClick = onReportsClick,

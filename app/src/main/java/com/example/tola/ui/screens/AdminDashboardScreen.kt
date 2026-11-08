@@ -1,11 +1,18 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -15,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.tola.ui.theme.TolaBorder
 import com.example.tola.ui.theme.TolaPrimary
+import com.example.tola.ui.theme.TolaSurface
 import com.example.tola.ui.theme.TolaTextPrimary
 import com.example.tola.ui.theme.TolaTextSecondary
 import com.example.tola.ui.theme.TolaTheme
@@ -28,6 +37,7 @@ fun AdminDashboardScreen(
     foundReports: Int = 0,
     pendingClaims: Int = 0,
     recoveredItems: Int = 0,
+    totalReports: Int = lostReports + foundReports,
     dashboardError: String? = null,
     onUsersClick: () -> Unit = {},
     onReportsClick: () -> Unit = {},
@@ -41,6 +51,7 @@ fun AdminDashboardScreen(
         subtitle = "Welcome, $adminName. Here's the current overview.",
     ) {
         Text("Overview", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
+        
         if (dashboardError != null) {
             Text(
                 text = dashboardError,
@@ -48,15 +59,24 @@ fun AdminDashboardScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            AdminStatCard("Total users", totalUsers, Modifier.weight(1f))
-            AdminStatCard("Lost reports", lostReports, Modifier.weight(1f))
+
+        // Reduced spacing grid for overview stat cards
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AdminStatCard("Total Users", totalUsers, Modifier.weight(1f))
+                AdminStatCard("Total Reports", totalReports, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AdminStatCard("Lost Reports", lostReports, Modifier.weight(1f))
+                AdminStatCard("Found Reports", foundReports, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AdminStatCard("Pending Claims", pendingClaims, Modifier.weight(1f))
+                AdminStatCard("Recovered Items", recoveredItems, Modifier.weight(1f))
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            AdminStatCard("Found reports", foundReports, Modifier.weight(1f))
-            AdminStatCard("Pending claims", pendingClaims, Modifier.weight(1f))
-        }
-        AdminStatCard("Recovered items", recoveredItems, Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text("Management", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TolaTextPrimary)
         AdminDashboardAction("User Management", "View and manage registered accounts.", "Manage users", onUsersClick)
@@ -75,9 +95,32 @@ fun AdminDashboardScreen(
 
 @Composable
 private fun AdminStatCard(title: String, value: Int, modifier: Modifier = Modifier) {
-    AdminPanelCard {
-        Text(title, style = MaterialTheme.typography.bodyMedium, color = TolaTextSecondary)
-        Text(value.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = TolaPrimary)
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, TolaBorder),
+        colors = CardDefaults.cardColors(containerColor = TolaSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = TolaTextSecondary,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = TolaPrimary
+            )
+        }
     }
 }
 

@@ -9,7 +9,8 @@ data class AdminDashboardStats(
     val lostReports: Int = 0,
     val foundReports: Int = 0,
     val pendingClaims: Int = 0,
-    val recoveredItems: Int = 0
+    val recoveredItems: Int = 0,
+    val totalReports: Int = lostReports + foundReports
 )
 
 class AdminDashboardRepository(
