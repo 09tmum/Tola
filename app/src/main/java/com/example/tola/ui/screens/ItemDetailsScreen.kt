@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -31,9 +32,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.rememberCoroutineScope
@@ -89,6 +94,13 @@ fun ItemDetailsScreen(
     var errorMessage by remember {
         mutableStateOf<String?>(null)
     }
+
+    var showEditReportDialog by remember { mutableStateOf(false) }
+    var editItemName by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
+    var editLocation by remember { mutableStateOf("") }
+    var editCategory by remember { mutableStateOf("") }
+    var itemNameError by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -245,7 +257,7 @@ fun ItemDetailsScreen(
                 }
 
                 item != null -> {
-                    // Image placeholder
+                    // Item Photo (Network / Cloud Image via Coil)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -256,11 +268,20 @@ fun ItemDetailsScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Item Photo",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
+                        if (item.imageUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = item.imageUrl,
+                                contentDescription = item.itemName,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = "No photo attached",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -420,6 +441,25 @@ fun ItemDetailsScreen(
                                     color = TolaPrimary
                                 )
 
+                                Button(
+                                    onClick = {
+                                        editItemName = item.itemName
+                                        editDescription = item.description
+                                        editLocation = item.location
+                                        editCategory = item.category
+                                        itemNameError = false
+                                        showEditReportDialog = true
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Text("Edit Report Details", fontWeight = FontWeight.Bold)
+                                }
+
                                 if (item.status != "RECOVERED" && item.status != "RESOLVED") {
                                     Button(
                                         onClick = {
@@ -514,6 +554,90 @@ fun ItemDetailsScreen(
                 }
             }
         }
+    }
+
+    if (showEditReportDialog && item != null) {
+        AlertDialog(
+            onDismissRequest = { showEditReportDialog = false },
+            title = { Text("Edit Report Details", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editItemName,
+                        onValueChange = {
+                            editItemName = it
+                            if (it.isNotBlank()) itemNameError = false
+                        },
+                        label = { Text("Item Name *") },
+                        isError = itemNameError,
+                        supportingText = {
+                            if (itemNameError) {
+                                Text("Item name cannot be empty", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editCategory,
+                        onValueChange = { editCategory = it },
+                        label = { Text("Category") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editLocation,
+                        onValueChange = { editLocation = it },
+                        label = { Text("Location") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editDescription,
+                        onValueChange = { editDescription = it },
+                        label = { Text("Description") },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editItemName.isBlank()) {
+                            itemNameError = true
+                            return@TextButton
+                        }
+                        scope.launch {
+                            try {
+                                repository.updateReport(
+                                    reportId = item.id,
+                                    itemName = editItemName,
+                                    description = editDescription,
+                                    location = editLocation,
+                                    category = editCategory
+                                )
+                                report = repository.getReportById(item.id)
+                                Toast.makeText(context, "Report updated successfully!", Toast.LENGTH_SHORT).show()
+                                showEditReportDialog = false
+                            } catch (e: Exception) {
+                                Toast.makeText(context, e.localizedMessage ?: "Failed to update report", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Save Changes", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditReportDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

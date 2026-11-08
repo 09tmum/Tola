@@ -10,5 +10,6 @@ data class LostFoundReport(
     val time: String = "",
     val type: String = "LOST",
     val ownerUid: String = "",
-    val status: String = "OPEN"
+    val status: String = "OPEN",
+    val imageUrl: String = ""
 )

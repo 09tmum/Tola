@@ -27,7 +27,8 @@ class ReportRepository(
         location: String,
         date: String,
         time: String,
-        isLost: Boolean
+        isLost: Boolean,
+        imageUrl: String = ""
     ): String {
         val currentAuth = auth
             ?: throw IllegalStateException("Firebase Authentication is not initialized.")
@@ -49,6 +50,7 @@ class ReportRepository(
             "type" to if (isLost) "LOST" else "FOUND",
             "ownerUid" to user.uid,
             "status" to "OPEN",
+            "imageUrl" to imageUrl,
             "createdAt" to FieldValue.serverTimestamp()
         )
 
@@ -64,7 +66,8 @@ class ReportRepository(
         locationFound: String,
         dateFound: String,
         timeFound: String,
-        additionalDetails: String
+        additionalDetails: String,
+        imageUrl: String = ""
     ): String {
         val currentAuth = auth
             ?: throw IllegalStateException("Firebase Authentication is not initialized.")
@@ -91,6 +94,7 @@ class ReportRepository(
             "type" to "FOUND",
             "ownerUid" to user.uid,
             "status" to "OPEN",
+            "imageUrl" to imageUrl,
             "createdAt" to FieldValue.serverTimestamp()
         )
 
@@ -125,7 +129,8 @@ class ReportRepository(
                 time = document.getString("time") ?: "",
                 type = document.getString("type") ?: "LOST",
                 ownerUid = document.getString("ownerUid") ?: "",
-                status = document.getString("status") ?: "OPEN"
+                status = document.getString("status") ?: "OPEN",
+                imageUrl = document.getString("imageUrl") ?: ""
             )
         }
     }
@@ -153,7 +158,8 @@ class ReportRepository(
                     time = document.getString("time") ?: "",
                     type = document.getString("type") ?: "LOST",
                     ownerUid = document.getString("ownerUid") ?: "",
-                    status = document.getString("status") ?: "OPEN"
+                    status = document.getString("status") ?: "OPEN",
+                    imageUrl = document.getString("imageUrl") ?: ""
                 )
             }
         } catch (_: Exception) {
@@ -188,7 +194,8 @@ class ReportRepository(
             time = document.getString("time") ?: "",
             type = document.getString("type") ?: "LOST",
             ownerUid = document.getString("ownerUid") ?: "",
-            status = document.getString("status") ?: "OPEN"
+            status = document.getString("status") ?: "OPEN",
+            imageUrl = document.getString("imageUrl") ?: ""
         )
     }
 
@@ -214,6 +221,33 @@ class ReportRepository(
         currentFirestore.collection("reports")
             .document(reportId)
             .delete()
+            .await()
+    }
+
+    suspend fun updateReport(
+        reportId: String,
+        itemName: String,
+        description: String,
+        location: String,
+        category: String
+    ) {
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
+        val cleanName = itemName.trim()
+        require(cleanName.isNotBlank()) { "Item name cannot be empty." }
+
+        currentFirestore.collection("reports")
+            .document(reportId)
+            .update(
+                mapOf(
+                    "itemName" to cleanName,
+                    "description" to description.trim(),
+                    "location" to location.trim(),
+                    "category" to category.trim(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
             .await()
     }
 }

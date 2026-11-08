@@ -161,7 +161,8 @@ class FirebaseAuthRepository(
                     studentId = snapshot.getString("studentId").orEmpty(),
                     email = snapshot.getString("email") ?: user.email.orEmpty(),
                     phoneNumber = snapshot.getString("phoneNumber").orEmpty(),
-                    role = snapshot.getString("role") ?: "STUDENT"
+                    role = snapshot.getString("role") ?: "STUDENT",
+                    profilePictureUrl = snapshot.getString("profilePictureUrl").orEmpty()
                 )
             }
         } catch (_: Exception) {
@@ -171,5 +172,36 @@ class FirebaseAuthRepository(
                 email = user.email.orEmpty()
             )
         }
+    }
+
+    suspend fun updateUserProfile(
+        fullName: String,
+        phoneNumber: String,
+        profilePictureUrl: String = ""
+    ) {
+        val currentAuth = auth
+            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
+        val user = currentAuth.currentUser
+            ?: throw IllegalStateException("You must be logged in to update your profile.")
+
+        val cleanName = fullName.trim()
+        require(cleanName.isNotBlank()) { "Full name cannot be empty." }
+
+        val updates = mutableMapOf<String, Any>(
+            "fullName" to cleanName,
+            "phoneNumber" to phoneNumber.trim(),
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+        if (profilePictureUrl.isNotBlank()) {
+            updates["profilePictureUrl"] = profilePictureUrl
+        }
+
+        currentFirestore.collection("users")
+            .document(user.uid)
+            .update(updates)
+            .await()
     }
 }

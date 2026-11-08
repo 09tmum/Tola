@@ -64,6 +64,12 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.CircularProgressIndicator
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import com.example.tola.data.FirebaseStorageRepository
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
@@ -115,9 +121,25 @@ fun ReportItemScreen(
         mutableStateOf(false)
     }
 
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
     val reportRepository = remember { ReportRepository() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val mimeType = context.contentResolver.getType(uri)
+            if (mimeType == null || mimeType.startsWith("image/")) {
+                selectedImageUri = uri
+                Toast.makeText(context, "Photo attached successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     var isSubmitting by remember { mutableStateOf(false) }
 
@@ -475,49 +497,67 @@ fun ReportItemScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { },
+                    .clickable {
+                        photoPickerLauncher.launch("image/*")
+                    },
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = if (selectedImageUri != null) {
+                        TolaPrimary.copy(alpha = 0.08f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
                 )
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Box(
                         modifier = Modifier
                             .size(48.dp)
                             .background(
-                                TolaPrimary.copy(alpha = 0.1f),
+                                if (selectedImageUri != null) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
                                 RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AddAPhoto,
+                            imageVector = if (selectedImageUri != null) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
                             contentDescription = null,
-                            tint = TolaPrimary
+                            tint = if (selectedImageUri != null) Color(0xFF16A34A) else TolaPrimary
                         )
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Add a photo",
+                            text = if (selectedImageUri != null) "Photo attached" else "Add a photo",
                             fontWeight = FontWeight.SemiBold
                         )
 
                         Text(
-                            text = "Optional but recommended",
+                            text = if (selectedImageUri != null) {
+                                selectedImageUri?.lastPathSegment ?: "Image file selected (click to change)"
+                            } else {
+                                "Optional (JPG/PNG only)"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    if (selectedImageUri != null) {
+                        IconButton(onClick = { selectedImageUri = null }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove photo",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -556,6 +596,11 @@ fun ReportItemScreen(
                         isSubmitting = true
 
                         try {
+                            val storageRepository = FirebaseStorageRepository()
+                            val cloudImageUrl = if (selectedImageUri != null) {
+                                storageRepository.uploadImage(context, selectedImageUri!!, "reports")
+                            } else ""
+
                             reportRepository.submitReport(
                                 itemName = itemName,
                                 category = category,
@@ -563,7 +608,8 @@ fun ReportItemScreen(
                                 location = location,
                                 date = date,
                                 time = time,
-                                isLost = isLost
+                                isLost = isLost,
+                                imageUrl = cloudImageUrl
                             )
 
                             Toast.makeText(

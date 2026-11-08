@@ -1,5 +1,7 @@
 package com.example.tola.ui
 
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.foundation.layout.padding
@@ -32,9 +34,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.data.ClaimRepository
+import com.example.tola.data.FirebaseStorageRepository
+import com.example.tola.data.ReportRepository
 import com.example.tola.ui.screens.AdminClaim
 import com.example.tola.ui.screens.ClaimOwnershipScreen
 import com.example.tola.ui.screens.FoundItemReportScreen
@@ -514,6 +519,10 @@ fun TolaApp() {
                     backStackEntry.arguments?.getString("itemId")
                         ?: ""
 
+                val coroutineScope = rememberCoroutineScope()
+                val context = LocalContext.current
+                val reportRepository = remember { ReportRepository() }
+
                 RoleGate(
                     currentRole = currentRole,
                     requiredRole = TolaUserRole.STUDENT,
@@ -524,8 +533,30 @@ fun TolaApp() {
                         onBack = {
                             navController.popBackStack()
                         },
-                        onSubmitReport = {
-                            navController.popBackStack()
+                        onSubmitReport = { data ->
+                            coroutineScope.launch {
+                                try {
+                                    val storageRepository = FirebaseStorageRepository()
+                                    val cloudImageUrl = if (data.imageUrl.isNotBlank() && data.imageUrl.startsWith("content:")) {
+                                        storageRepository.uploadImage(context, Uri.parse(data.imageUrl), "reports")
+                                    } else {
+                                        data.imageUrl
+                                    }
+
+                                    reportRepository.submitFoundReportForLinkedItem(
+                                        linkedItemId = data.itemId,
+                                        locationFound = data.locationFound,
+                                        dateFound = data.dateFound,
+                                        timeFound = data.timeFound,
+                                        additionalDetails = data.additionalDetails,
+                                        imageUrl = cloudImageUrl
+                                    )
+                                    Toast.makeText(context, "Found item report submitted!", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, e.localizedMessage ?: "Failed to submit report", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
                     )
                 }

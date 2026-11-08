@@ -6,7 +6,8 @@ data class UserProfile(
     val studentId: String = "",
     val email: String = "",
     val phoneNumber: String = "",
-    val role: String = "STUDENT"
+    val role: String = "STUDENT",
+    val profilePictureUrl: String = ""
 ) {
     val initials: String
         get() {

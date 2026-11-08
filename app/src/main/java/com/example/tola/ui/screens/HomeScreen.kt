@@ -76,6 +76,9 @@ import com.example.tola.data.LostFoundReport
 import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.auth.UserProfile
 
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+
 data class LostFoundFeedItem(
     val id: String,
     val title: String,
@@ -83,7 +86,8 @@ data class LostFoundFeedItem(
     val location: String,
     val timeAgo: String,
     val isFound: Boolean,
-    val tagNumber: String
+    val tagNumber: String,
+    val imageUrl: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -164,7 +168,8 @@ fun HomeScreen(
                         .filter { it.isNotBlank() }
                         .joinToString(" · "),
                     isFound = report.type == "FOUND",
-                    tagNumber = report.id.takeLast(6)
+                    tagNumber = report.id.takeLast(6),
+                    imageUrl = report.imageUrl
                 )
             }
 
@@ -442,6 +447,25 @@ private fun LostFoundItemCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            if (item.imageUrl.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    AsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

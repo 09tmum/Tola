@@ -1,15 +1,19 @@
 package com.example.tola.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -46,6 +50,7 @@ import java.util.TimeZone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,12 +71,22 @@ import com.example.tola.ui.theme.TolaTextPrimary
 import com.example.tola.ui.theme.TolaTextSecondary
 import com.example.tola.ui.theme.TolaTheme
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.platform.LocalContext
+
 data class FoundItemReportData(
     val itemId: String,
     val locationFound: String,
     val dateFound: String,
     val timeFound: String,
-    val additionalDetails: String
+    val additionalDetails: String,
+    val imageUrl: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +104,23 @@ fun FoundItemReportScreen(
     var attemptedSubmit by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val mimeType = context.contentResolver.getType(uri)
+            if (mimeType == null || mimeType.startsWith("image/")) {
+                selectedImageUri = uri
+                Toast.makeText(context, "Photo attached successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     val locationError = attemptedSubmit && locationFound.isBlank()
     val dateError = attemptedSubmit && dateFound.isBlank()
@@ -342,6 +374,77 @@ fun FoundItemReportScreen(
                 )
             )
 
+            // Photo Attachment
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        photoPickerLauncher.launch("image/*")
+                    },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedImageUri != null) {
+                        TolaPrimary.copy(alpha = 0.08f)
+                    } else {
+                        TolaSurface
+                    }
+                ),
+                border = BorderStroke(1.dp, TolaBorder)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(
+                                if (selectedImageUri != null) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
+                                RoundedCornerShape(10.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (selectedImageUri != null) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
+                            contentDescription = null,
+                            tint = if (selectedImageUri != null) Color(0xFF16A34A) else TolaPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (selectedImageUri != null) "Photo attached" else "Add photo of found item",
+                            fontWeight = FontWeight.SemiBold,
+                            color = TolaTextPrimary
+                        )
+
+                        Text(
+                            text = if (selectedImageUri != null) {
+                                selectedImageUri?.lastPathSegment ?: "Image selected (click to change)"
+                            } else {
+                                "Optional (JPG/PNG)"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TolaTextMuted
+                        )
+                    }
+
+                    if (selectedImageUri != null) {
+                        IconButton(onClick = { selectedImageUri = null }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove photo",
+                                tint = TolaTextMuted
+                            )
+                        }
+                    }
+                }
+            }
+
             Button(
                 onClick = {
                     attemptedSubmit = true
@@ -352,7 +455,8 @@ fun FoundItemReportScreen(
                                 locationFound = locationFound.trim(),
                                 dateFound = dateFound.trim(),
                                 timeFound = timeFound.trim(),
-                                additionalDetails = additionalDetails.trim()
+                                additionalDetails = additionalDetails.trim(),
+                                imageUrl = selectedImageUri?.toString().orEmpty()
                             )
                         )
                     }

@@ -53,6 +53,10 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     // Cloud Firestore
     implementation("com.google.firebase:firebase-firestore")
+    // Firebase Cloud Storage
+    implementation("com.google.firebase:firebase-storage")
+    // Coil Compose Image Loading
+    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

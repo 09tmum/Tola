@@ -15,40 +15,57 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.auth.UserProfile
 import com.example.tola.data.ClaimRepository
+import com.example.tola.data.FirebaseStorageRepository
 import com.example.tola.data.LostFoundReport
 import com.example.tola.data.ReportRepository
 import com.example.tola.ui.theme.TolaFoundBackground
@@ -70,6 +87,29 @@ fun ProfileScreen(
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var userReports by remember { mutableStateOf<List<LostFoundReport>>(emptyList()) }
     var pendingClaimsCount by remember { mutableStateOf(0) }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editFullName by remember { mutableStateOf("") }
+    var editPhoneNumber by remember { mutableStateOf("") }
+    var editProfilePictureUrl by remember { mutableStateOf("") }
+    var nameError by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val profilePhotoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val mimeType = context.contentResolver.getType(uri)
+            if (mimeType == null || mimeType.startsWith("image/")) {
+                editProfilePictureUrl = uri.toString()
+                Toast.makeText(context, "Photo selected! Click Save to apply.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     val isPreview = LocalInspectionMode.current
     val authRepository = if (isPreview) null else remember { FirebaseAuthRepository() }
@@ -143,17 +183,26 @@ fun ProfileScreen(
                             .background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = userProfile?.initials ?: "U",
-                            color = TolaPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (userProfile?.profilePictureUrl?.isNotBlank() == true) {
+                            AsyncImage(
+                                model = userProfile?.profilePictureUrl,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = userProfile?.initials ?: "U",
+                                color = TolaPrimary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(14.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = userProfile?.fullName?.ifBlank { "Campus Student" } ?: "Campus Student",
                             color = Color.White,
@@ -181,6 +230,21 @@ fun ProfileScreen(
                                 fontSize = 12.sp
                             )
                         }
+                    }
+
+                    IconButton(
+                        onClick = {
+                            editFullName = userProfile?.fullName.orEmpty()
+                            editPhoneNumber = userProfile?.phoneNumber.orEmpty()
+                            nameError = false
+                            showEditDialog = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Profile",
+                            tint = Color.White
+                        )
                     }
                 }
             }
@@ -470,6 +534,119 @@ fun ProfileScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editFullName,
+                        onValueChange = {
+                            editFullName = it
+                            if (it.isNotBlank()) nameError = false
+                        },
+                        label = { Text("Full Name *") },
+                        isError = nameError,
+                        supportingText = {
+                            if (nameError) {
+                                Text("Full name cannot be empty", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = editPhoneNumber,
+                        onValueChange = { editPhoneNumber = it },
+                        label = { Text("Phone Number") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Profile Photo option
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                profilePhotoPickerLauncher.launch("image/*")
+                            },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                tint = TolaPrimary
+                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Column {
+                                Text(
+                                    text = if (editProfilePictureUrl.isNotBlank()) "Photo attached" else "Change Profile Photo",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+
+                                Text(
+                                    text = if (editProfilePictureUrl.isNotBlank()) "Click to change photo" else "Upload photo from gallery",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editFullName.isBlank()) {
+                            nameError = true
+                            return@TextButton
+                        }
+                        coroutineScope.launch {
+                            try {
+                                val storageRepo = FirebaseStorageRepository()
+                                val cloudProfileUrl = if (editProfilePictureUrl.isNotBlank() && editProfilePictureUrl.startsWith("content:")) {
+                                    storageRepo.uploadImage(context, Uri.parse(editProfilePictureUrl), "profiles")
+                                } else {
+                                    editProfilePictureUrl
+                                }
+
+                                authRepository?.updateUserProfile(
+                                    fullName = editFullName,
+                                    phoneNumber = editPhoneNumber,
+                                    profilePictureUrl = cloudProfileUrl
+                                )
+                                userProfile = authRepository?.getCurrentUserProfile()
+                                Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
+                                showEditDialog = false
+                            } catch (e: Exception) {
+                                Toast.makeText(context, e.localizedMessage ?: "Failed to update profile", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Save", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
