@@ -138,6 +138,16 @@ class FirebaseAuthRepository(
         auth?.signOut()
     }
 
+    suspend fun sendPasswordResetEmail(email: String) {
+        val cleanEmail = email.trim()
+        require(cleanEmail.isNotBlank()) { "Enter your email address." }
+
+        val currentAuth = auth
+            ?: throw IllegalStateException("Firebase Authentication is not initialized.")
+
+        currentAuth.sendPasswordResetEmail(cleanEmail).await()
+    }
+
     suspend fun getCurrentUserProfile(): UserProfile? {
         val currentAuth = auth ?: return null
         val currentFirestore = firestore ?: return null

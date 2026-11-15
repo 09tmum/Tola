@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -69,6 +70,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import com.example.tola.data.Base64ImageUtils
 import com.example.tola.data.FirebaseStorageRepository
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostText
@@ -240,6 +242,7 @@ fun ReportItemScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
         ) {
@@ -596,9 +599,8 @@ fun ReportItemScreen(
                         isSubmitting = true
 
                         try {
-                            val storageRepository = FirebaseStorageRepository()
-                            val cloudImageUrl = if (selectedImageUri != null) {
-                                storageRepository.uploadImage(context, selectedImageUri!!, "reports")
+                            val encodedImageUrl = if (selectedImageUri != null) {
+                                Base64ImageUtils.compressAndEncodeUri(context, selectedImageUri!!)
                             } else ""
 
                             reportRepository.submitReport(
@@ -609,7 +611,7 @@ fun ReportItemScreen(
                                 date = date,
                                 time = time,
                                 isLost = isLost,
-                                imageUrl = cloudImageUrl
+                                imageUrl = encodedImageUrl
                             )
 
                             Toast.makeText(

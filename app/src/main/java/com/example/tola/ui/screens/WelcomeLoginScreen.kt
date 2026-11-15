@@ -1,6 +1,8 @@
 package com.example.tola.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -32,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -133,8 +139,15 @@ fun WelcomeLoginScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var messageIsError by remember { mutableStateOf(true) }
 
+    // Forgot password state
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    var resetEmail by remember { mutableStateOf("") }
+    var resetEmailError by remember { mutableStateOf(false) }
+    var isSendingReset by remember { mutableStateOf(false) }
+
     val repository = remember { FirebaseAuthRepository() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val isLoginEmailValid = isValidEmail(email)
     val isRegEmailValid = isValidEmail(regEmail)
@@ -156,6 +169,7 @@ fun WelcomeLoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -315,7 +329,12 @@ fun WelcomeLoginScreen(
                         text = "Forgot Password?",
                         color = TolaPrimary,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        modifier = Modifier.clickable {
+                            resetEmail = email.trim()
+                            resetEmailError = false
+                            showForgotPasswordDialog = true
+                        }
                     )
                 }
 
@@ -660,6 +679,93 @@ fun WelcomeLoginScreen(
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }
+    }
+
+    if (showForgotPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isSendingReset) showForgotPasswordDialog = false },
+            title = { Text("Reset Password", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Enter your registered email address and we will send you a link to reset your password.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = {
+                            resetEmail = it.filter { char -> !char.isWhitespace() }
+                            if (it.isNotBlank()) resetEmailError = false
+                        },
+                        label = { Text("Registered Email") },
+                        placeholder = { Text("student@campus.edu") },
+                        singleLine = true,
+                        isError = resetEmailError,
+                        supportingText = {
+                            if (resetEmailError) {
+                                Text("Please enter a valid email address.")
+                            }
+                        },
+                        enabled = !isSendingReset,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (!isValidEmail(resetEmail)) {
+                            resetEmailError = true
+                            return@Button
+                        }
+
+                        scope.launch {
+                            isSendingReset = true
+                            try {
+                                repository.sendPasswordResetEmail(resetEmail)
+                                Toast.makeText(
+                                    context,
+                                    "Password reset link sent! Check your email inbox.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                showForgotPasswordDialog = false
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    authErrorMessage(e),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                isSendingReset = false
+                            }
+                        }
+                    },
+                    enabled = !isSendingReset,
+                    colors = ButtonDefaults.buttonColors(containerColor = TolaPrimary)
+                ) {
+                    if (isSendingReset) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Send Reset Link", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showForgotPasswordDialog = false },
+                    enabled = !isSendingReset
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

@@ -64,10 +64,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.auth.UserProfile
+import com.example.tola.data.Base64ImageUtils
 import com.example.tola.data.ClaimRepository
 import com.example.tola.data.FirebaseStorageRepository
 import com.example.tola.data.LostFoundReport
 import com.example.tola.data.ReportRepository
+import com.example.tola.ui.components.TolaImage
 import com.example.tola.ui.theme.TolaFoundBackground
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostBackground
@@ -184,7 +186,7 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (userProfile?.profilePictureUrl?.isNotBlank() == true) {
-                            AsyncImage(
+                            TolaImage(
                                 model = userProfile?.profilePictureUrl,
                                 contentDescription = "Profile Picture",
                                 modifier = Modifier.fillMaxSize(),
@@ -617,9 +619,8 @@ fun ProfileScreen(
                         }
                         coroutineScope.launch {
                             try {
-                                val storageRepo = FirebaseStorageRepository()
-                                val cloudProfileUrl = if (editProfilePictureUrl.isNotBlank() && editProfilePictureUrl.startsWith("content:")) {
-                                    storageRepo.uploadImage(context, Uri.parse(editProfilePictureUrl), "profiles")
+                                val encodedProfileUrl = if (editProfilePictureUrl.isNotBlank() && editProfilePictureUrl.startsWith("content:")) {
+                                    Base64ImageUtils.compressAndEncodeUri(context, Uri.parse(editProfilePictureUrl))
                                 } else {
                                     editProfilePictureUrl
                                 }
@@ -627,7 +628,7 @@ fun ProfileScreen(
                                 authRepository?.updateUserProfile(
                                     fullName = editFullName,
                                     phoneNumber = editPhoneNumber,
-                                    profilePictureUrl = cloudProfileUrl
+                                    profilePictureUrl = encodedProfileUrl
                                 )
                                 userProfile = authRepository?.getCurrentUserProfile()
                                 Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()

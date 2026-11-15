@@ -73,6 +73,7 @@ import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
 import com.example.tola.ui.theme.TolaTheme
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.tola.ui.components.TolaImage
 
 @Composable
 fun ItemDetailsScreen(
@@ -269,7 +270,7 @@ fun ItemDetailsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (item.imageUrl.isNotBlank()) {
-                            AsyncImage(
+                            TolaImage(
                                 model = item.imageUrl,
                                 contentDescription = item.itemName,
                                 modifier = Modifier.fillMaxSize(),

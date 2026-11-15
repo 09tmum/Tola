@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import com.example.tola.auth.FirebaseAuthRepository
+import com.example.tola.data.Base64ImageUtils
 import com.example.tola.data.ClaimRepository
 import com.example.tola.data.FirebaseStorageRepository
 import com.example.tola.data.ReportRepository
@@ -536,9 +537,8 @@ fun TolaApp() {
                         onSubmitReport = { data ->
                             coroutineScope.launch {
                                 try {
-                                    val storageRepository = FirebaseStorageRepository()
-                                    val cloudImageUrl = if (data.imageUrl.isNotBlank() && data.imageUrl.startsWith("content:")) {
-                                        storageRepository.uploadImage(context, Uri.parse(data.imageUrl), "reports")
+                                    val encodedImageUrl = if (data.imageUrl.isNotBlank() && data.imageUrl.startsWith("content:")) {
+                                        Base64ImageUtils.compressAndEncodeUri(context, Uri.parse(data.imageUrl))
                                     } else {
                                         data.imageUrl
                                     }
@@ -549,7 +549,7 @@ fun TolaApp() {
                                         dateFound = data.dateFound,
                                         timeFound = data.timeFound,
                                         additionalDetails = data.additionalDetails,
-                                        imageUrl = cloudImageUrl
+                                        imageUrl = encodedImageUrl
                                     )
                                     Toast.makeText(context, "Found item report submitted!", Toast.LENGTH_SHORT).show()
                                     navController.popBackStack()

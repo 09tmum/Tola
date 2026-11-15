@@ -78,6 +78,7 @@ import com.example.tola.auth.UserProfile
 
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import com.example.tola.ui.components.TolaImage
 
 data class LostFoundFeedItem(
     val id: String,
@@ -455,7 +456,7 @@ private fun LostFoundItemCard(
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    AsyncImage(
+                    TolaImage(
                         model = item.imageUrl,
                         contentDescription = item.title,
                         modifier = Modifier.fillMaxSize(),

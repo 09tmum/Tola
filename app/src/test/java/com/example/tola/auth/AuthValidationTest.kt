@@ -95,4 +95,14 @@ class AuthValidationTest {
         }
         assertEquals("Enter your password.", exception.message)
     }
+
+    @Test
+    fun sendPasswordResetEmail_blankEmail_throwsIllegalArgumentException() {
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            runBlocking {
+                repository.sendPasswordResetEmail(email = "   ")
+            }
+        }
+        assertEquals("Enter your email address.", exception.message)
+    }
 }
