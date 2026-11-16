@@ -747,31 +747,7 @@ fun TolaApp() {
                     onAccessDenied = redirectToAllowedScreen
                 ) {
                     StudentNotificationsScreen(
-                        onBack = { navController.popBackStack() },
-                        notifications = listOf(
-                            StudentNotification(
-                                id = "1",
-                                title = "Claim update",
-                                message = "Your ownership claim for Cobalt Blue Hydro Flask is being reviewed.",
-                                timeLabel = "10 minutes ago",
-                                type = StudentNotificationType.CLAIM
-                            ),
-                            StudentNotification(
-                                id = "2",
-                                title = "Possible item match",
-                                message = "A found item report may match your lost North Face Recon Backpack.",
-                                timeLabel = "1 hour ago",
-                                type = StudentNotificationType.ITEM_MATCH,
-                                isRead = true
-                            ),
-                            StudentNotification(
-                                id = "3",
-                                title = "Item recovery confirmed",
-                                message = "Your item has been marked as recovered.",
-                                timeLabel = "Yesterday",
-                                type = StudentNotificationType.RECOVERY
-                            )
-                        )
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }

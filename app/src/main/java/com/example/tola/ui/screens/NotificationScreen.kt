@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -36,10 +37,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tola.data.NotificationRepository
 import com.example.tola.ui.theme.TolaBackground
 import com.example.tola.ui.theme.TolaBorder
 import com.example.tola.ui.theme.TolaOnPrimaryContainer
@@ -90,12 +95,41 @@ fun StudentNotificationsScreen(
         mutableStateOf("All")
     }
 
-    val unreadCount = notifications.count { !it.isRead }
+    var notificationList by remember { mutableStateOf(notifications) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val isPreview = LocalInspectionMode.current
+    val repository = if (isPreview) null else remember { NotificationRepository() }
+
+    LaunchedEffect(notifications) {
+        if (notifications.isNotEmpty()) {
+            notificationList = notifications
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        if (isPreview) {
+            notificationList = emptyList()
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        try {
+            notificationList = repository?.getStudentNotifications().orEmpty()
+        } catch (_: Exception) {
+            notificationList = emptyList()
+        } finally {
+            isLoading = false
+        }
+    }
+
+    val unreadCount = notificationList.count { !it.isRead }
 
     val visibleNotifications = when (selectedFilter) {
-        "Unread" -> notifications.filter { !it.isRead }
-        "Read" -> notifications.filter { it.isRead }
-        else -> notifications
+        "Unread" -> notificationList.filter { !it.isRead }
+        "Read" -> notificationList.filter { it.isRead }
+        else -> notificationList
     }
 
     Scaffold(
