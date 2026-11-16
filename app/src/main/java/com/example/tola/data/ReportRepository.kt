@@ -231,11 +231,11 @@ class ReportRepository(
         location: String,
         category: String
     ) {
-        val currentFirestore = firestore
-            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
-
         val cleanName = itemName.trim()
         require(cleanName.isNotBlank()) { "Item name cannot be empty." }
+
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
 
         currentFirestore.collection("reports")
             .document(reportId)

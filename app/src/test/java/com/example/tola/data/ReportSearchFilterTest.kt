@@ -37,18 +37,34 @@ class ReportSearchFilterTest {
         )
     )
 
+    private fun applyStatusFilter(items: List<LostFoundFeedItem>, filter: String): List<LostFoundFeedItem> {
+        return items.filter { item ->
+            when (filter) {
+                "Lost Only" -> !item.isFound
+                "Found Only" -> item.isFound
+                else -> true
+            }
+        }
+    }
+
     @Test
     fun filter_status_lostOnly_returnsOnlyLostReports() {
-        val filtered = sampleItems.filter { !it.isFound }
+        val filtered = applyStatusFilter(sampleItems, "Lost Only")
         assertEquals(1, filtered.size)
         assertEquals("North Face Backpack", filtered.first().title)
     }
 
     @Test
     fun filter_status_foundOnly_returnsOnlyFoundReports() {
-        val filtered = sampleItems.filter { it.isFound }
+        val filtered = applyStatusFilter(sampleItems, "Found Only")
         assertEquals(2, filtered.size)
         assertTrue(filtered.all { it.isFound })
+    }
+
+    @Test
+    fun filter_status_allPosts_returnsAllItems() {
+        val filtered = applyStatusFilter(sampleItems, "All Posts")
+        assertEquals(3, filtered.size)
     }
 
     @Test

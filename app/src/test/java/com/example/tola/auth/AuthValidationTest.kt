@@ -105,4 +105,9 @@ class AuthValidationTest {
         }
         assertEquals("Enter your email address.", exception.message)
     }
+
+    @Test
+    fun logout_uninitializedAuth_executesWithoutError() {
+        repository.logout()
+    }
 }

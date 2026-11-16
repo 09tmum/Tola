@@ -27,14 +27,6 @@ class ClaimRepository(
         itemId: String,
         proofDescription: String
     ): String {
-        val currentAuth = auth
-            ?: throw IllegalStateException("Please log in before submitting a claim.")
-        val currentFirestore = firestore
-            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
-
-        val user = currentAuth.currentUser
-            ?: throw IllegalStateException("Please log in before submitting a claim.")
-
         val proof = proofDescription.trim()
 
         require(itemId.isNotBlank()) {
@@ -44,6 +36,14 @@ class ClaimRepository(
         require(proof.isNotEmpty() && proof.length <= 400) {
             "Please provide ownership evidence between 1 and 400 characters."
         }
+
+        val currentAuth = auth
+            ?: throw IllegalStateException("Please log in before submitting a claim.")
+        val currentFirestore = firestore
+            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
+
+        val user = currentAuth.currentUser
+            ?: throw IllegalStateException("Please log in before submitting a claim.")
 
         val report = currentFirestore.collection("reports")
             .document(itemId)
@@ -154,6 +154,10 @@ class ClaimRepository(
         claimId: String,
         approve: Boolean
     ) {
+        require(claimId.isNotBlank()) {
+            "The claim ID is missing."
+        }
+
         val currentAuth = auth
             ?: throw IllegalStateException(
                 "Firebase Authentication is not initialized."
@@ -168,10 +172,6 @@ class ClaimRepository(
             ?: throw IllegalStateException(
                 "Please log in before reviewing claims."
             )
-
-        require(claimId.isNotBlank()) {
-            "The claim ID is missing."
-        }
 
         // Verify the administrator's profile before attempting a decision.
         val profile = currentFirestore.collection("users")
