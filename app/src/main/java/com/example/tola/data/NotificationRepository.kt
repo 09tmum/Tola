@@ -1,5 +1,6 @@
 package com.example.tola.data
 
+import android.content.Context
 import com.example.tola.ui.screens.StudentNotification
 import com.example.tola.ui.screens.StudentNotificationType
 import com.google.firebase.auth.FirebaseAuth
@@ -24,11 +25,31 @@ class NotificationRepository(
     private val firestore: FirebaseFirestore?
         get() = firestoreProvider()
 
-    suspend fun getStudentNotifications(): List<StudentNotification> {
+    private fun getReadIds(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences("tola_notifications", Context.MODE_PRIVATE)
+        return prefs.getStringSet("read_ids", emptySet()) ?: emptySet()
+    }
+
+    fun markAsRead(context: Context, notificationId: String) {
+        val prefs = context.getSharedPreferences("tola_notifications", Context.MODE_PRIVATE)
+        val readIds = prefs.getStringSet("read_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
+        readIds.add(notificationId)
+        prefs.edit().putStringSet("read_ids", readIds).apply()
+    }
+
+    fun markAllAsRead(context: Context, notificationIds: List<String>) {
+        val prefs = context.getSharedPreferences("tola_notifications", Context.MODE_PRIVATE)
+        val readIds = prefs.getStringSet("read_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
+        readIds.addAll(notificationIds)
+        prefs.edit().putStringSet("read_ids", readIds).apply()
+    }
+
+    suspend fun getStudentNotifications(context: Context? = null): List<StudentNotification> {
         val currentAuth = auth ?: return emptyList()
         val currentFirestore = firestore ?: return emptyList()
         val user = currentAuth.currentUser ?: return emptyList()
 
+        val readIds = if (context != null) getReadIds(context) else emptySet()
         val notifications = mutableListOf<StudentNotification>()
 
         try {
@@ -40,6 +61,7 @@ class NotificationRepository(
 
             for (claimDoc in claimsSnapshot.documents) {
                 val claimId = claimDoc.id
+                val notifId = "claim_$claimId"
                 val status = claimDoc.getString("status") ?: "PENDING"
                 val itemId = claimDoc.getString("itemId") ?: ""
                 val timestamp = claimDoc.getTimestamp("reviewedAt")
@@ -73,14 +95,16 @@ class NotificationRepository(
                     )
                 }
 
+                val isRead = readIds.contains(notifId) || status != "PENDING"
+
                 notifications.add(
                     StudentNotification(
-                        id = "claim_$claimId",
+                        id = notifId,
                         title = title,
                         message = message,
                         timeLabel = timeLabel,
                         type = type,
-                        isRead = status != "PENDING"
+                        isRead = isRead
                     )
                 )
             }
@@ -93,6 +117,7 @@ class NotificationRepository(
 
             for (reportDoc in reportsSnapshot.documents) {
                 val reportId = reportDoc.id
+                val notifId = "report_$reportId"
                 val itemName = reportDoc.getString("itemName") ?: "Reported Item"
                 val status = reportDoc.getString("status") ?: "OPEN"
                 val type = reportDoc.getString("type") ?: "LOST"
@@ -102,26 +127,28 @@ class NotificationRepository(
                 val date = timestamp?.toDate() ?: Date()
                 val timeLabel = formatTimeAgo(date)
 
+                val isRead = readIds.contains(notifId) || (status == "RECOVERED" || status == "RESOLVED")
+
                 if (status == "RECOVERED" || status == "RESOLVED") {
                     notifications.add(
                         StudentNotification(
-                            id = "report_$reportId",
+                            id = notifId,
                             title = "Item Marked as Recovered",
                             message = "Your $type report for '$itemName' was marked as recovered.",
                             timeLabel = timeLabel,
                             type = StudentNotificationType.RECOVERY,
-                            isRead = true
+                            isRead = isRead
                         )
                     )
                 } else {
                     notifications.add(
                         StudentNotification(
-                            id = "report_$reportId",
+                            id = notifId,
                             title = "$type Report Active",
                             message = "Your $type report for '$itemName' is live on the campus feed.",
                             timeLabel = timeLabel,
                             type = if (type == "FOUND") StudentNotificationType.FOUND_ITEM else StudentNotificationType.ITEM_MATCH,
-                            isRead = true
+                            isRead = isRead
                         )
                     )
                 }

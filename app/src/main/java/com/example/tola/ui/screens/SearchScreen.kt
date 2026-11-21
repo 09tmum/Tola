@@ -19,12 +19,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,10 +43,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tola.data.ReportRepository
+import com.example.tola.data.LostFoundReport
+import com.example.tola.data.NotificationRepository
 import com.example.tola.ui.theme.TolaFoundBackground
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostBackground
@@ -62,49 +69,73 @@ fun SearchScreen(
     var selectedType by remember { mutableStateOf("All") }
     var selectedCategory by remember { mutableStateOf("All") }
 
-    val searchItems = remember {
-        listOf(
-            LostFoundFeedItem(
-                id = "LF-1",
-                title = "Cobalt Blue Hydro Flask",
-                description = "Blue water bottle with a black lid.",
-                location = "Main Library",
-                timeAgo = "15 min ago",
-                isFound = true,
-                tagNumber = "LF-1024"
-            ),
-            LostFoundFeedItem(
-                id = "LF-2",
-                title = "North Face Recon Backpack",
-                description = "Black backpack with a small red keychain.",
-                location = "Computer Lab",
-                timeAgo = "1 hour ago",
-                isFound = false,
-                tagNumber = "LF-1023"
-            ),
-            LostFoundFeedItem(
-                id = "LF-3",
-                title = "AirPods Pro with Red Case",
-                description = "White AirPods in a red protective case.",
-                location = "Student Centre",
-                timeAgo = "2 hours ago",
-                isFound = true,
-                tagNumber = "LF-1022"
-            ),
-            LostFoundFeedItem(
-                id = "LF-4",
-                title = "Student ID Card",
-                description = "University student identification card.",
-                location = "Main Car Park",
-                timeAgo = "3 hours ago",
-                isFound = false,
-                tagNumber = "LF-1021"
+    var searchItems by remember { mutableStateOf<List<LostFoundFeedItem>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    val isPreview = LocalInspectionMode.current
+    val repository = if (isPreview) null else remember { ReportRepository() }
+
+    LaunchedEffect(isPreview) {
+        if (isPreview) {
+            searchItems = listOf(
+                LostFoundFeedItem(
+                    id = "LF-1",
+                    title = "Cobalt Blue Hydro Flask",
+                    description = "Blue water bottle with a black lid.",
+                    location = "Main Library",
+                    timeAgo = "15 min ago",
+                    isFound = true,
+                    tagNumber = "LF-1024"
+                ),
+                LostFoundFeedItem(
+                    id = "LF-2",
+                    title = "North Face Recon Backpack",
+                    description = "Black backpack with a small red keychain.",
+                    location = "Computer Lab",
+                    timeAgo = "1 hour ago",
+                    isFound = false,
+                    tagNumber = "LF-1023"
+                ),
+                LostFoundFeedItem(
+                    id = "LF-3",
+                    title = "AirPods Pro with Red Case",
+                    description = "White AirPods in a red protective case.",
+                    location = "Student Centre",
+                    timeAgo = "2 hours ago",
+                    isFound = true,
+                    tagNumber = "LF-1022"
+                )
             )
-        )
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        try {
+            val reports = repository?.getReports().orEmpty()
+            searchItems = reports.map { report ->
+                val date = listOf(report.date, report.time).filter { it.isNotBlank() }.joinToString(" · ")
+                LostFoundFeedItem(
+                    id = report.id,
+                    title = report.itemName,
+                    description = report.description,
+                    location = report.location,
+                    timeAgo = date.ifBlank { "Recently" },
+                    isFound = report.type == "FOUND",
+                    tagNumber = report.id.takeLast(6),
+                    imageUrl = report.imageUrl
+                )
+            }
+            loadError = null
+        } catch (e: Exception) {
+            loadError = e.localizedMessage ?: "Unable to load search items."
+        } finally {
+            isLoading = false
+        }
     }
 
     val filteredItems = searchItems.filter { item ->
-
         val matchesSearch =
             searchQuery.isBlank() ||
                     item.title.contains(searchQuery, ignoreCase = true) ||
@@ -118,20 +149,11 @@ fun SearchScreen(
         }
 
         val matchesCategory = when (selectedCategory) {
-            "Electronics" ->
-                item.title.contains("AirPods", ignoreCase = true)
-
-            "Bags" ->
-                item.title.contains("Backpack", ignoreCase = true)
-
-            "IDs" ->
-                item.title.contains("ID", ignoreCase = true)
-
-            "Accessories" ->
-                item.title.contains("Hydro", ignoreCase = true)
-
-            else -> true
+            "All" -> true
+            else -> item.title.contains(selectedCategory, ignoreCase = true) ||
+                    item.description.contains(selectedCategory, ignoreCase = true)
         }
+
         matchesSearch && matchesType && matchesCategory
     }
 
@@ -189,6 +211,16 @@ fun SearchScreen(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search"
                         )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search"
+                                )
+                            }
+                        }
                     },
                     shape = RoundedCornerShape(14.dp)
                 )
@@ -262,56 +294,69 @@ fun SearchScreen(
             // Results heading
             item {
                 Text(
-                    text = "${filteredItems.size} items found",
+                    text = if (isLoading) "Loading search items..." else "${filteredItems.size} items found",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // Results
-            items(
-                items = filteredItems,
-                key = { it.id }
-            ) { item ->
-
-                SearchItemCard(
-                    item = item,
-                    onClick = {
-                        onItemClick(item.id)
-                    }
-                )
-            }
-
-            // No results
-            if (filteredItems.isEmpty()) {
+            if (isLoading) {
                 item {
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 40.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
                     ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            } else {
+                // Results
+                items(
+                    items = filteredItems,
+                    key = { it.id }
+                ) { item ->
 
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = TolaPrimary
-                        )
+                    SearchItemCard(
+                        item = item,
+                        onClick = {
+                            onItemClick(item.id)
+                        }
+                    )
+                }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                // No results
+                if (filteredItems.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
 
-                        Text(
-                            text = "No items found",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = TolaPrimary
+                            )
 
-                        Text(
-                            text = "Try a different search or category.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "No items found",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Text(
+                                text = "Try a different search or category.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

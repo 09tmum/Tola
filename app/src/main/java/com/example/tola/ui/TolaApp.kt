@@ -9,12 +9,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,6 +52,7 @@ import com.example.tola.auth.FirebaseAuthRepository
 import com.example.tola.data.Base64ImageUtils
 import com.example.tola.data.ClaimRepository
 import com.example.tola.data.FirebaseStorageRepository
+import com.example.tola.data.NetworkObserver
 import com.example.tola.data.ReportRepository
 import com.example.tola.ui.screens.AdminClaim
 import com.example.tola.ui.screens.ClaimOwnershipScreen
@@ -174,6 +187,8 @@ sealed class Screen(
 fun TolaApp() {
 
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val isOnline by remember(context) { NetworkObserver(context).isOnline }.collectAsState(initial = true)
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
@@ -261,13 +276,40 @@ fun TolaApp() {
         }
     ) { innerPadding ->
 
-        NavHost(
-            navController = navController,
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (!isOnline) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.WifiOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "You are offline. Showing cached items.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
 
-            startDestination = Screen.Splash.route,
-
-            modifier = Modifier.padding(innerPadding)
-        ) {
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Splash.route,
+                modifier = Modifier.weight(1f)
+            ) {
 
             // Splash
             composable(Screen.Splash.route) {
@@ -751,6 +793,7 @@ fun TolaApp() {
                     )
                 }
             }
+        }
         }
     }
 }

@@ -43,6 +43,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,8 +99,28 @@ fun StudentNotificationsScreen(
     var notificationList by remember { mutableStateOf(notifications) }
     var isLoading by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val isPreview = LocalInspectionMode.current
     val repository = if (isPreview) null else remember { NotificationRepository() }
+
+    val handleMarkAsRead: (String) -> Unit = { id ->
+        notificationList = notificationList.map {
+            if (it.id == id) it.copy(isRead = true) else it
+        }
+        if (!isPreview) {
+            repository?.markAsRead(context, id)
+        }
+        onMarkAsRead(id)
+    }
+
+    val handleMarkAllAsRead: () -> Unit = {
+        val unreadIds = notificationList.filter { !it.isRead }.map { it.id }
+        notificationList = notificationList.map { it.copy(isRead = true) }
+        if (!isPreview) {
+            repository?.markAllAsRead(context, unreadIds)
+        }
+        onMarkAllAsRead()
+    }
 
     LaunchedEffect(notifications) {
         if (notifications.isNotEmpty()) {
@@ -116,7 +137,7 @@ fun StudentNotificationsScreen(
 
         isLoading = true
         try {
-            notificationList = repository?.getStudentNotifications().orEmpty()
+            notificationList = repository?.getStudentNotifications(context).orEmpty()
         } catch (_: Exception) {
             notificationList = emptyList()
         } finally {
@@ -171,7 +192,7 @@ fun StudentNotificationsScreen(
                 }
 
                 if (unreadCount > 0) {
-                    TextButton(onClick = onMarkAllAsRead) {
+                    TextButton(onClick = handleMarkAllAsRead) {
                         Text(
                             text = "Mark all read",
                             color = TolaPrimary,
@@ -276,10 +297,11 @@ fun StudentNotificationsScreen(
                         StudentNotificationCard(
                             notification = notification,
                             onClick = {
+                                handleMarkAsRead(notification.id)
                                 onNotificationClick(notification)
                             },
                             onMarkAsRead = {
-                                onMarkAsRead(notification.id)
+                                handleMarkAsRead(notification.id)
                             }
                         )
                     }
