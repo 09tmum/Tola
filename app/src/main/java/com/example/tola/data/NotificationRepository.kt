@@ -105,7 +105,8 @@ class NotificationRepository(
                         message = message,
                         timeLabel = timeLabel,
                         type = type,
-                        isRead = isRead
+                        isRead = isRead,
+                        itemId = itemId
                     )
                 )
             }
@@ -151,7 +152,8 @@ class NotificationRepository(
                             message = "Your $type report for '$itemName' was marked as recovered.",
                             timeLabel = timeLabel,
                             type = StudentNotificationType.RECOVERY,
-                            isRead = isRead
+                            isRead = isRead,
+                            itemId = reportId
                         )
                     )
                 } else {
@@ -162,7 +164,8 @@ class NotificationRepository(
                             message = "Your $type report for '$itemName' is live on the campus feed.",
                             timeLabel = timeLabel,
                             type = if (type == "FOUND") StudentNotificationType.FOUND_ITEM else StudentNotificationType.ITEM_MATCH,
-                            isRead = isRead
+                            isRead = isRead,
+                            itemId = reportId
                         )
                     )
                 }
@@ -204,7 +207,8 @@ class NotificationRepository(
                             message = "A found '$itemName' matching your lost '${matchingLostReport.itemName}' was reported at $location.",
                             timeLabel = timeLabel,
                             type = StudentNotificationType.ITEM_MATCH,
-                            isRead = isRead
+                            isRead = isRead,
+                            itemId = reportId
                         )
                     )
                 } else if (type == "FOUND") {
@@ -215,7 +219,8 @@ class NotificationRepository(
                             message = "'$itemName' was reported found at $location.",
                             timeLabel = timeLabel,
                             type = StudentNotificationType.FOUND_ITEM,
-                            isRead = isRead
+                            isRead = isRead,
+                            itemId = reportId
                         )
                     )
                 }

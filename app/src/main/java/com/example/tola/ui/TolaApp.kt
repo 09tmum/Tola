@@ -793,7 +793,12 @@ fun TolaApp() {
                     onAccessDenied = redirectToAllowedScreen
                 ) {
                     StudentNotificationsScreen(
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        onNotificationClick = { notification ->
+                            if (notification.itemId.isNotBlank()) {
+                                navController.navigate(Screen.ItemDetails.createRoute(notification.itemId))
+                            }
+                        }
                     )
                 }
             }

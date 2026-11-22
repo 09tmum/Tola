@@ -81,7 +81,8 @@ data class StudentNotification(
     val message: String,
     val timeLabel: String,
     val type: StudentNotificationType,
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val itemId: String = ""
 )
 
 @Composable
