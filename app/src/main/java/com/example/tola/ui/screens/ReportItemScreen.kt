@@ -1,5 +1,6 @@
 package com.example.tola.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +21,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -123,20 +127,36 @@ fun ReportItemScreen(
         mutableStateOf(false)
     }
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedImageBase64 by remember { mutableStateOf("") }
+    var showPhotoSourceDialog by remember { mutableStateOf(false) }
 
     val reportRepository = remember { ReportRepository() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val photoPickerLauncher = rememberLauncherForActivityResult(
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            val encoded = Base64ImageUtils.compressAndEncodeBitmap(bitmap)
+            if (encoded.isNotBlank()) {
+                selectedImageBase64 = encoded
+                Toast.makeText(context, "Photo captured successfully!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             val mimeType = context.contentResolver.getType(uri)
             if (mimeType == null || mimeType.startsWith("image/")) {
-                selectedImageUri = uri
-                Toast.makeText(context, "Photo attached successfully", Toast.LENGTH_SHORT).show()
+                val encoded = Base64ImageUtils.compressAndEncodeUri(context, uri)
+                if (encoded.isNotBlank()) {
+                    selectedImageBase64 = encoded
+                    Toast.makeText(context, "Photo selected from gallery!", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
             }
@@ -501,11 +521,11 @@ fun ReportItemScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        photoPickerLauncher.launch("image/*")
+                        showPhotoSourceDialog = true
                     },
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (selectedImageUri != null) {
+                    containerColor = if (selectedImageBase64.isNotBlank()) {
                         TolaPrimary.copy(alpha = 0.08f)
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
@@ -522,15 +542,15 @@ fun ReportItemScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .background(
-                                if (selectedImageUri != null) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
+                                if (selectedImageBase64.isNotBlank()) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
                                 RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (selectedImageUri != null) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
+                            imageVector = if (selectedImageBase64.isNotBlank()) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
                             contentDescription = null,
-                            tint = if (selectedImageUri != null) Color(0xFF16A34A) else TolaPrimary
+                            tint = if (selectedImageBase64.isNotBlank()) Color(0xFF16A34A) else TolaPrimary
                         )
                     }
 
@@ -538,23 +558,23 @@ fun ReportItemScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (selectedImageUri != null) "Photo attached" else "Add a photo",
+                            text = if (selectedImageBase64.isNotBlank()) "Photo attached" else "Add a photo",
                             fontWeight = FontWeight.SemiBold
                         )
 
                         Text(
-                            text = if (selectedImageUri != null) {
-                                selectedImageUri?.lastPathSegment ?: "Image file selected (click to change)"
+                            text = if (selectedImageBase64.isNotBlank()) {
+                                "Photo attached (click to change)"
                             } else {
-                                "Optional (JPG/PNG only)"
+                                "Camera or Gallery (Optional)"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    if (selectedImageUri != null) {
-                        IconButton(onClick = { selectedImageUri = null }) {
+                    if (selectedImageBase64.isNotBlank()) {
+                        IconButton(onClick = { selectedImageBase64 = "" }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Remove photo",
@@ -599,10 +619,6 @@ fun ReportItemScreen(
                         isSubmitting = true
 
                         try {
-                            val encodedImageUrl = if (selectedImageUri != null) {
-                                Base64ImageUtils.compressAndEncodeUri(context, selectedImageUri!!)
-                            } else ""
-
                             reportRepository.submitReport(
                                 itemName = itemName,
                                 category = category,
@@ -611,7 +627,7 @@ fun ReportItemScreen(
                                 date = date,
                                 time = time,
                                 isLost = isLost,
-                                imageUrl = encodedImageUrl
+                                imageUrl = selectedImageBase64
                             )
 
                             Toast.makeText(
@@ -685,6 +701,68 @@ fun ReportItemScreen(
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+
+    if (showPhotoSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhotoSourceDialog = false },
+            title = { Text("Select Photo Source", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showPhotoSourceDialog = false
+                                cameraLauncher.launch(null)
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = TolaPrimary.copy(alpha = 0.08f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Take Photo with Camera", fontWeight = FontWeight.Bold, color = TolaPrimary)
+                                Text("Use phone camera to capture item", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showPhotoSourceDialog = false
+                                galleryLauncher.launch("image/*")
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.PhotoLibrary, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Choose from Gallery", fontWeight = FontWeight.Bold)
+                                Text("Select existing photo file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPhotoSourceDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

@@ -73,6 +73,7 @@ object Base64ImageUtils {
         if (width <= maxWidth && height <= maxHeight) return bitmap
 
         val aspectRatio = width.toFloat() / height.toFloat()
+
         var newWidth = maxWidth
         var newHeight = (newWidth / aspectRatio).toInt()
 

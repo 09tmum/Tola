@@ -1,5 +1,6 @@
 package com.example.tola.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -77,9 +78,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.platform.LocalContext
+import com.example.tola.data.Base64ImageUtils
 
 data class FoundItemReportData(
     val itemId: String,
@@ -106,17 +111,33 @@ fun FoundItemReportScreen(
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedImageBase64 by remember { mutableStateOf("") }
+    var showPhotoSourceDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val photoPickerLauncher = rememberLauncherForActivityResult(
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            val encoded = Base64ImageUtils.compressAndEncodeBitmap(bitmap)
+            if (encoded.isNotBlank()) {
+                selectedImageBase64 = encoded
+                Toast.makeText(context, "Photo captured successfully!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             val mimeType = context.contentResolver.getType(uri)
             if (mimeType == null || mimeType.startsWith("image/")) {
-                selectedImageUri = uri
-                Toast.makeText(context, "Photo attached successfully", Toast.LENGTH_SHORT).show()
+                val encoded = Base64ImageUtils.compressAndEncodeUri(context, uri)
+                if (encoded.isNotBlank()) {
+                    selectedImageBase64 = encoded
+                    Toast.makeText(context, "Photo selected from gallery!", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
             }
@@ -381,11 +402,11 @@ fun FoundItemReportScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        photoPickerLauncher.launch("image/*")
+                        showPhotoSourceDialog = true
                     },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (selectedImageUri != null) {
+                    containerColor = if (selectedImageBase64.isNotBlank()) {
                         TolaPrimary.copy(alpha = 0.08f)
                     } else {
                         TolaSurface
@@ -403,15 +424,15 @@ fun FoundItemReportScreen(
                         modifier = Modifier
                             .size(44.dp)
                             .background(
-                                if (selectedImageUri != null) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
+                                if (selectedImageBase64.isNotBlank()) Color(0xFF16A34A).copy(alpha = 0.15f) else TolaPrimary.copy(alpha = 0.1f),
                                 RoundedCornerShape(10.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (selectedImageUri != null) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
+                            imageVector = if (selectedImageBase64.isNotBlank()) Icons.Default.CheckCircle else Icons.Default.AddAPhoto,
                             contentDescription = null,
-                            tint = if (selectedImageUri != null) Color(0xFF16A34A) else TolaPrimary
+                            tint = if (selectedImageBase64.isNotBlank()) Color(0xFF16A34A) else TolaPrimary
                         )
                     }
 
@@ -419,24 +440,24 @@ fun FoundItemReportScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (selectedImageUri != null) "Photo attached" else "Add photo of found item",
+                            text = if (selectedImageBase64.isNotBlank()) "Photo attached" else "Add photo of found item",
                             fontWeight = FontWeight.SemiBold,
                             color = TolaTextPrimary
                         )
 
                         Text(
-                            text = if (selectedImageUri != null) {
-                                selectedImageUri?.lastPathSegment ?: "Image selected (click to change)"
+                            text = if (selectedImageBase64.isNotBlank()) {
+                                "Photo attached (click to change)"
                             } else {
-                                "Optional (JPG/PNG)"
+                                "Camera or Gallery (Optional)"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = TolaTextMuted
                         )
                     }
 
-                    if (selectedImageUri != null) {
-                        IconButton(onClick = { selectedImageUri = null }) {
+                    if (selectedImageBase64.isNotBlank()) {
+                        IconButton(onClick = { selectedImageBase64 = "" }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Remove photo",
@@ -458,7 +479,7 @@ fun FoundItemReportScreen(
                                 dateFound = dateFound.trim(),
                                 timeFound = timeFound.trim(),
                                 additionalDetails = additionalDetails.trim(),
-                                imageUrl = selectedImageUri?.toString().orEmpty()
+                                imageUrl = selectedImageBase64
                             )
                         )
                     }
@@ -492,6 +513,68 @@ fun FoundItemReportScreen(
                 color = TolaTextMuted
             )
         }
+    }
+
+    if (showPhotoSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhotoSourceDialog = false },
+            title = { Text("Select Photo Source", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showPhotoSourceDialog = false
+                                cameraLauncher.launch(null)
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = TolaPrimary.copy(alpha = 0.08f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Take Photo with Camera", fontWeight = FontWeight.Bold, color = TolaPrimary)
+                                Text("Use phone camera to capture item", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showPhotoSourceDialog = false
+                                galleryLauncher.launch("image/*")
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = TolaSurface)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.PhotoLibrary, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Choose from Gallery", fontWeight = FontWeight.Bold)
+                                Text("Select existing photo file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPhotoSourceDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

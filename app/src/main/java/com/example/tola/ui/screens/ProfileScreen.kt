@@ -21,17 +21,20 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,19 +97,35 @@ fun ProfileScreen(
     var editFullName by remember { mutableStateOf("") }
     var editPhoneNumber by remember { mutableStateOf("") }
     var editProfilePictureUrl by remember { mutableStateOf("") }
+    var showProfilePhotoSourceDialog by remember { mutableStateOf(false) }
     var nameError by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val profilePhotoPickerLauncher = rememberLauncherForActivityResult(
+    val profileCameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            val encoded = Base64ImageUtils.compressAndEncodeBitmap(bitmap)
+            if (encoded.isNotBlank()) {
+                editProfilePictureUrl = encoded
+                Toast.makeText(context, "Camera photo captured! Click Save to apply.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val profileGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             val mimeType = context.contentResolver.getType(uri)
             if (mimeType == null || mimeType.startsWith("image/")) {
-                editProfilePictureUrl = uri.toString()
-                Toast.makeText(context, "Photo selected! Click Save to apply.", Toast.LENGTH_SHORT).show()
+                val encoded = Base64ImageUtils.compressAndEncodeUri(context, uri)
+                if (encoded.isNotBlank()) {
+                    editProfilePictureUrl = encoded
+                    Toast.makeText(context, "Gallery photo selected! Click Save to apply.", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 Toast.makeText(context, "Invalid file type. Please select an image file (.jpg, .png).", Toast.LENGTH_LONG).show()
             }
@@ -574,7 +593,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                profilePhotoPickerLauncher.launch("image/*")
+                                showProfilePhotoSourceDialog = true
                             },
                         shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(
@@ -644,6 +663,68 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showProfilePhotoSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showProfilePhotoSourceDialog = false },
+            title = { Text("Select Profile Photo Source", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showProfilePhotoSourceDialog = false
+                                profileCameraLauncher.launch(null)
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = TolaPrimary.copy(alpha = 0.08f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Take Photo with Camera", fontWeight = FontWeight.Bold, color = TolaPrimary)
+                                Text("Use phone camera for profile picture", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showProfilePhotoSourceDialog = false
+                                profileGalleryLauncher.launch("image/*")
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.PhotoLibrary, contentDescription = null, tint = TolaPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Choose from Gallery", fontWeight = FontWeight.Bold)
+                                Text("Select existing photo file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showProfilePhotoSourceDialog = false }) {
                     Text("Cancel")
                 }
             }

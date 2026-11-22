@@ -51,6 +51,7 @@ class NotificationRepository(
 
         val readIds = if (context != null) getReadIds(context) else emptySet()
         val notifications = mutableListOf<StudentNotification>()
+        val userLostReports = mutableListOf<LostFoundReport>()
 
         try {
             // 1. Fetch User's Claims Updates
@@ -119,6 +120,7 @@ class NotificationRepository(
                 val reportId = reportDoc.id
                 val notifId = "report_$reportId"
                 val itemName = reportDoc.getString("itemName") ?: "Reported Item"
+                val category = reportDoc.getString("category") ?: ""
                 val status = reportDoc.getString("status") ?: "OPEN"
                 val type = reportDoc.getString("type") ?: "LOST"
                 val timestamp = reportDoc.getTimestamp("updatedAt")
@@ -126,6 +128,18 @@ class NotificationRepository(
 
                 val date = timestamp?.toDate() ?: Date()
                 val timeLabel = formatTimeAgo(date)
+
+                if (type == "LOST" && status == "OPEN") {
+                    userLostReports.add(
+                        LostFoundReport(
+                            id = reportId,
+                            itemName = itemName,
+                            category = category,
+                            type = type,
+                            status = status
+                        )
+                    )
+                }
 
                 val isRead = readIds.contains(notifId) || (status == "RECOVERED" || status == "RESOLVED")
 
@@ -148,6 +162,59 @@ class NotificationRepository(
                             message = "Your $type report for '$itemName' is live on the campus feed.",
                             timeLabel = timeLabel,
                             type = if (type == "FOUND") StudentNotificationType.FOUND_ITEM else StudentNotificationType.ITEM_MATCH,
+                            isRead = isRead
+                        )
+                    )
+                }
+            }
+
+            // 3. Fetch Reports Submitted by OTHER Users (Cross-User Notifications)
+            val otherReportsSnapshot = currentFirestore.collection("reports")
+                .whereNotEqualTo("ownerUid", user.uid)
+                .get()
+                .await()
+
+            for (reportDoc in otherReportsSnapshot.documents) {
+                val reportId = reportDoc.id
+                val notifId = "other_report_$reportId"
+                val itemName = reportDoc.getString("itemName") ?: "Found Item"
+                val category = reportDoc.getString("category") ?: ""
+                val location = reportDoc.getString("location") ?: "Campus"
+                val type = reportDoc.getString("type") ?: "FOUND"
+                val status = reportDoc.getString("status") ?: "OPEN"
+                val timestamp = reportDoc.getTimestamp("createdAt")
+
+                if (status != "OPEN") continue
+
+                val date = timestamp?.toDate() ?: Date()
+                val timeLabel = formatTimeAgo(date)
+                val isRead = readIds.contains(notifId)
+
+                val matchingLostReport = userLostReports.firstOrNull { lost ->
+                    (category.isNotBlank() && lost.category.equals(category, ignoreCase = true)) ||
+                            itemName.contains(lost.itemName, ignoreCase = true) ||
+                            lost.itemName.contains(itemName, ignoreCase = true)
+                }
+
+                if (type == "FOUND" && matchingLostReport != null) {
+                    notifications.add(
+                        StudentNotification(
+                            id = notifId,
+                            title = "Possible Item Match Found! 🔍",
+                            message = "A found '$itemName' matching your lost '${matchingLostReport.itemName}' was reported at $location.",
+                            timeLabel = timeLabel,
+                            type = StudentNotificationType.ITEM_MATCH,
+                            isRead = isRead
+                        )
+                    )
+                } else if (type == "FOUND") {
+                    notifications.add(
+                        StudentNotification(
+                            id = notifId,
+                            title = "New Found Item Reported",
+                            message = "'$itemName' was reported found at $location.",
+                            timeLabel = timeLabel,
+                            type = StudentNotificationType.FOUND_ITEM,
                             isRead = isRead
                         )
                     )
