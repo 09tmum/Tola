@@ -404,6 +404,10 @@ fun TolaApp() {
                             )
                         },
 
+                        onReportLost = {
+                            navController.navigate(Screen.ReportItem.createRoute(isLost = true))
+                        },
+
                         onProfileClick = {
                             navController.navigate(Screen.Profile.route)
                         },

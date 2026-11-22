@@ -58,6 +58,8 @@ dependencies {
     // Coil Compose Image Loading
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    // AndroidX WorkManager for background sync
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))

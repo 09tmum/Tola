@@ -627,7 +627,8 @@ fun ReportItemScreen(
                                 date = date,
                                 time = time,
                                 isLost = isLost,
-                                imageUrl = selectedImageBase64
+                                imageUrl = selectedImageBase64,
+                                context = context
                             )
 
                             Toast.makeText(

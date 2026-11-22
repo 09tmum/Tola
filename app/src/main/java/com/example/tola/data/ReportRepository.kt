@@ -1,5 +1,7 @@
 package com.example.tola.data
 
+import android.content.Context
+import com.example.tola.worker.ReportSyncScheduler
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -28,17 +30,16 @@ class ReportRepository(
         date: String,
         time: String,
         isLost: Boolean,
-        imageUrl: String = ""
+        imageUrl: String = "",
+        context: Context? = null
     ): String {
         val currentAuth = auth
             ?: throw IllegalStateException("Firebase Authentication is not initialized.")
-        val currentFirestore = firestore
-            ?: throw IllegalStateException("Firebase Firestore is not initialized.")
 
         val user = currentAuth.currentUser
-            ?: throw IllegalStateException(
-                "You must be logged in to submit a report."
-            )
+            ?: throw IllegalStateException("You must be logged in to submit a report.")
+
+        val currentFirestore = firestore
 
         val reportData = hashMapOf(
             "itemName" to itemName.trim(),
@@ -54,11 +55,31 @@ class ReportRepository(
             "createdAt" to FieldValue.serverTimestamp()
         )
 
-        val document = currentFirestore.collection("reports")
-            .add(reportData)
-            .await()
-
-        return document.id
+        return try {
+            if (currentFirestore == null) throw IllegalStateException("Firebase Firestore is not initialized.")
+            val document = currentFirestore.collection("reports")
+                .add(reportData)
+                .await()
+            document.id
+        } catch (e: Exception) {
+            if (context != null) {
+                val report = LostFoundReport(
+                    itemName = itemName.trim(),
+                    category = category,
+                    description = description.trim(),
+                    location = location.trim(),
+                    date = date,
+                    time = time,
+                    type = if (isLost) "LOST" else "FOUND",
+                    ownerUid = user.uid,
+                    status = "OPEN",
+                    imageUrl = imageUrl
+                )
+                ReportSyncScheduler.scheduleReportSync(context, report, user.uid)
+            } else {
+                throw e
+            }
+        }
     }
 
     suspend fun submitFoundReportForLinkedItem(

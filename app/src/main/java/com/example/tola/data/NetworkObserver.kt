@@ -21,7 +21,8 @@ class NetworkObserver(context: Context) {
             }
 
             override fun onLost(network: Network) {
-                trySend(false)
+                val active = connectivityManager.activeNetwork
+                trySend(active != null)
             }
 
             override fun onUnavailable() {
@@ -33,13 +34,22 @@ class NetworkObserver(context: Context) {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
 
-        connectivityManager.registerNetworkCallback(request, callback)
+        try {
+            connectivityManager.registerNetworkCallback(request, callback)
+        } catch (_: Exception) {
+        }
 
-        // Initial check
+        // Initial check - default to true if active network exists
         val currentNetwork = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(currentNetwork)
-        val hasInternet = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-        trySend(hasInternet)
+        val isConnected = currentNetwork != null && (
+                capabilities == null ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                )
+        trySend(isConnected)
 
         awaitClose {
             try {

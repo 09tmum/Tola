@@ -67,6 +67,7 @@ import com.example.tola.ui.theme.TolaTheme
 fun SearchScreen(
     onHomeClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    onReportLost: () -> Unit = {},
     onItemClick: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -370,6 +371,9 @@ fun SearchScreen(
             // Alert banner
             item {
                 Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onReportLost),
                     colors = CardDefaults.cardColors(
                         containerColor = TolaPrimaryContainer
                     ),
