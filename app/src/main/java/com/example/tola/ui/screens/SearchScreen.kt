@@ -1,5 +1,6 @@
 package com.example.tola.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,12 +52,15 @@ import androidx.compose.ui.unit.sp
 import com.example.tola.data.ReportRepository
 import com.example.tola.data.LostFoundReport
 import com.example.tola.data.NotificationRepository
+import com.example.tola.ui.theme.TolaBackground
+import com.example.tola.ui.theme.TolaBorder
 import com.example.tola.ui.theme.TolaFoundBackground
 import com.example.tola.ui.theme.TolaFoundText
 import com.example.tola.ui.theme.TolaLostBackground
 import com.example.tola.ui.theme.TolaLostText
 import com.example.tola.ui.theme.TolaPrimary
 import com.example.tola.ui.theme.TolaPrimaryContainer
+import com.example.tola.ui.theme.TolaSurface
 import com.example.tola.ui.theme.TolaTheme
 
 @Composable
@@ -158,7 +162,9 @@ fun SearchScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(TolaBackground),
         contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
@@ -410,9 +416,11 @@ private fun SearchItemCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, TolaBorder),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
+            containerColor = TolaSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
 
         Column(
