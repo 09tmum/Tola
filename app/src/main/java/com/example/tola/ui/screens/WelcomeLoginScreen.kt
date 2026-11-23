@@ -1,5 +1,6 @@
 package com.example.tola.ui.screens
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -148,6 +150,14 @@ fun WelcomeLoginScreen(
     val repository = remember { FirebaseAuthRepository() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("tola_auth_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("remember_me", false)) {
+            rememberMe = true
+            email = prefs.getString("saved_email", "") ?: ""
+        }
+    }
 
     val isLoginEmailValid = isValidEmail(email)
     val isRegEmailValid = isValidEmail(regEmail)
@@ -352,6 +362,13 @@ fun WelcomeLoginScreen(
                                     email = email.trim(),
                                     password = password
                                 )
+
+                                val prefs = context.getSharedPreferences("tola_auth_prefs", Context.MODE_PRIVATE)
+                                if (rememberMe) {
+                                    prefs.edit().putBoolean("remember_me", true).putString("saved_email", email.trim()).apply()
+                                } else {
+                                    prefs.edit().remove("remember_me").remove("saved_email").apply()
+                                }
 
                                 messageIsError = false
                                 message = "Login successful."
